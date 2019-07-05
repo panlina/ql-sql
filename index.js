@@ -13,21 +13,6 @@ function qlsql(ql) {
 				identifier: ql.identifier
 			};
 			break;
-		case 'unary':
-			sql = {
-				type: 'unary',
-				operator: ql.operator,
-				operand: qlsql(ql.operand)
-			};
-			break;
-		case 'binary':
-			sql = {
-				type: 'binary',
-				operator: ql.operator,
-				left: qlsql(ql.left),
-				right: qlsql(ql.right)
-			};
-			break;
 	}
 	return sql;
 }
