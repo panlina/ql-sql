@@ -28,6 +28,14 @@ function qlsql(ql) {
 				right: qlsql(ql.right)
 			};
 			break;
+		case 'filter':
+			sql = {
+				type: 'select',
+				field: [{ type: 'name', identifier: '*' }],
+				from: qlsql(ql.expression),
+				where: qlsql(ql.filter)
+			};
+			break;
 	}
 	return sql;
 }
