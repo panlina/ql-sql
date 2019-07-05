@@ -13,19 +13,38 @@ function qlsql(ql) {
 				identifier: ql.identifier
 			};
 			break;
+		case 'unary':
+			sql = {
+				type: 'unary',
+				operator: ql.operator,
+				operand: qlsql(ql.operand)
+			};
+			break;
+		case 'binary':
+			sql = {
+				type: 'binary',
+				operator: ql.operator,
+				left: qlsql(ql.left),
+				right: qlsql(ql.right)
+			};
+			break;
 	}
-	if (sql.type == 'name')
-		sql = {
-			type: 'select',
-			field: [{ type: 'name', identifier: '*' }],
-			from: sql
-		};
-	else if (sql.type == 'literal')
-		sql = {
-			type: 'select',
-			field: [sql]
-		};
 	return sql;
 }
 
-module.exports = qlsql;
+module.exports = function (ql) {
+	var sql = qlsql(ql);
+	if (sql.type != 'select')
+		if (sql.type == 'name')
+			sql = {
+				type: 'select',
+				field: [{ type: 'name', identifier: '*' }],
+				from: sql
+			};
+		else
+			sql = {
+				type: 'select',
+				field: [sql]
+			};
+	return sql;
+};
