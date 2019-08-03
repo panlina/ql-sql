@@ -20,6 +20,19 @@ function qlsql(ql) {
 				from: qlsql(ql.expression)
 			};
 			break;
+		case 'index':
+			sql = {
+				type: 'select',
+				field: [{ type: 'name', identifier: '*' }],
+				from: qlsql(ql.expression),
+				where: qlsql({
+					type: 'binary',
+					operator: '=',
+					left: { type: 'name', identifier: 'id' },
+					right: ql.index
+				})
+			};
+			break;
 		case 'unary':
 			sql = {
 				type: 'unary',
