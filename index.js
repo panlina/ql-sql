@@ -13,6 +13,13 @@ function qlsql(ql) {
 				identifier: ql.identifier
 			};
 			break;
+		case 'property':
+			sql = {
+				type: 'select',
+				field: [{ type: 'name', identifier: ql.property }],
+				from: qlsql(ql.expression)
+			};
+			break;
 		case 'unary':
 			sql = {
 				type: 'unary',
