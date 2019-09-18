@@ -60,8 +60,7 @@ function qlsql(ql) {
 	return sql;
 }
 
-module.exports = function (ql) {
-	var sql = qlsql(ql);
+function selectize(sql) {
 	if (sql.type != 'select')
 		if (sql.type == 'name')
 			sql = {
@@ -75,4 +74,9 @@ module.exports = function (ql) {
 				field: [sql]
 			};
 	return sql;
+}
+
+module.exports = function (ql) {
+	var sql = qlsql(ql);
+	return selectize(sql);
 };
