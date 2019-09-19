@@ -56,6 +56,17 @@ function qlsql(ql) {
 				where: qlsql(ql.filter)
 			};
 			break;
+		case 'comma':
+			sql = {
+				type: 'select',
+				with: {
+					name: ql.head.name,
+					value: selectize(qlsql(ql.head.value))
+				},
+				field: [{ type: 'name', identifier: '*' }],
+				from: qlsql(ql.body)
+			};
+			break;
 	}
 	return sql;
 }
