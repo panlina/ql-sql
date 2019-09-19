@@ -6,5 +6,8 @@
     "sql"
   ],
   "author": "Jack Lu <jacklu@jacklu.me>",
-  "license": "ISC"
+  "license": "ISC",
+  "peerDependencies": {
+    "ql": "git+https://github.com/panlina/ql.git"
+  }
 }
