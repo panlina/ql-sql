@@ -9,5 +9,14 @@
   "license": "ISC",
   "peerDependencies": {
     "ql": "git+https://github.com/panlina/ql.git"
+  },
+  "devDependencies": {
+    "mocha": "^6.2.0",
+    "mysql": "^2.17.0",
+    "ql": "git+https://github.com/panlina/ql.git",
+    "sql-generate": "git+https://github.com/panlina/sql-generate.git"
+  },
+  "scripts": {
+    "test": "mocha"
   }
 }
