@@ -3,6 +3,8 @@ var ql = require('ql');
 var generate = require('sql-generate');
 var mysql = require('mysql');
 var qlsql = require('..');
+var type = require('./type');
+var type = require('lodash.mapvalues')(type, require('ql/Type.parse'));
 var connection;
 before(function () {
 	connection = mysql.createConnection({
@@ -17,7 +19,8 @@ after(function () {
 });
 it('', async function () {
 	var q = ql.parse("store");
-	var sql = qlsql(q);
+	var [sql, t] = qlsql.call(new ql.Environment(new ql.Scope(type)), q);
+	assert.equal(t, type.store);
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
