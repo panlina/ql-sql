@@ -28,12 +28,12 @@ function qlsql(ql) {
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
 					from: qlsql(ql.expression),
-					where: qlsql({
+					where: {
 						type: 'binary',
 						operator: '=',
 						left: { type: 'name', identifier: 'id' },
-						right: ql.index
-					})
+						right: qlsql(ql.index)
+					}
 				};
 				break;
 			case 'unary':
