@@ -1,6 +1,10 @@
 var { Scope } = require('ql');
 function qlsql(ql) {
 	var global = this;
+	var i = 0;
+	this.scope.alias = { local: {} };
+	for (var name in this.scope.local)
+		this.scope.alias.local[name] = name;
 	var [sql, type] = qlsql.call(this, ql);
 	return [selectize(sql), type];
 	function qlsql(ql) {
@@ -13,10 +17,16 @@ function qlsql(ql) {
 				}, typeof ql.value];
 				break;
 			case 'name':
+				var [value, [depth, key]] = resolve.call(this, ql);
+				var alias = ancestor.call(this, global, depth).scope.alias;
 				sql = [{
 					type: 'name',
-					identifier: ql.identifier
-				}, resolve.call(this, ql)[0]];
+					identifier:
+						key == 'local' ?
+							alias.local[ql.identifier] :
+							key == 'this' ? `${alias.this}.${ql.identifier}` :
+								undefined
+				}, value];
 				function resolve(expression) {
 					if (expression.depth == Infinity)
 						var [value, key] = global.scope.resolve(expression.identifier),
@@ -24,6 +34,11 @@ function qlsql(ql) {
 					else
 						var [value, [depth, key]] = this.resolve(expression.identifier);
 					return [value, [depth, key]];
+				}
+				function ancestor(global, depth) {
+					return depth == Infinity ?
+						global :
+						this.ancestor(depth);
 				}
 				break;
 			case 'property':
@@ -68,26 +83,46 @@ function qlsql(ql) {
 				}, operate(ql.operator, typeLeft, typeRight)];
 				break;
 			case 'filter':
+				var alias = `_${i++}`;
 				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$filter] = qlsql.call(this.push(new Scope({}, type[0])), ql.filter);
+				var [$filter] = qlsql.call(
+					this.push(
+						Object.assign(
+							new Scope({}, type[0]),
+							{ alias: { this: alias } }
+						)
+					),
+					ql.filter
+				);
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
 					from: $expression,
+					alias: alias,
 					where: $filter
 				}, type];
 				break;
 			case 'comma':
+				var alias = `_${i++}`;
 				var [$value, type] = qlsql.call(this, ql.head.value);
-				var [$body, type] = qlsql.call(this.push(new Scope({ [ql.head.name]: type })), ql.body);
+				var [$body, type] = qlsql.call(
+					this.push(
+						Object.assign(
+							new Scope({ [ql.head.name]: type }),
+							{ alias: { local: { [ql.head.name]: alias } } }
+						)
+					),
+					ql.body
+				);
 				sql = [{
 					type: 'select',
 					with: {
-						name: ql.head.name,
+						name: alias,
 						value: selectize($value)
 					},
 					field: [{ type: 'name', identifier: '*' }],
-					from: $body
+					from: $body,
+					alias: `_${i++}`
 				}, type];
 				break;
 		}
