@@ -46,7 +46,8 @@ function qlsql(ql) {
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: ql.property }],
-					from: $expression
+					from: $expression,
+					alias: `_${i++}`
 				}, type[ql.property].type];
 				break;
 			case 'index':
@@ -56,6 +57,7 @@ function qlsql(ql) {
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
 					from: $expression,
+					alias: `_${i++}`,
 					where: {
 						type: 'binary',
 						operator: '=',
