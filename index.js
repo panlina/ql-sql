@@ -18,15 +18,27 @@ function qlsql(ql) {
 				break;
 			case 'name':
 				var [value, [depth, key]] = resolve.call(this, ql);
-				var alias = ancestor.call(this, global, depth).scope.alias;
-				sql = [{
-					type: 'name',
-					identifier:
-						key == 'local' ?
-							alias.local[ql.identifier] :
-							key == 'this' ? `${alias.this}.${ql.identifier}` :
-								undefined
-				}, value];
+				var scope = ancestor.call(this, global, depth).scope;
+				var alias = scope.alias;
+				if (key == 'this' && value.value)
+					sql = qlsql.call(
+						global.push(
+							Object.assign(
+								new Scope({}, scope.this),
+								{ alias: { this: alias.this } }
+							)
+						),
+						scope.this[ql.identifier].value
+					);
+				else
+					sql = [{
+						type: 'name',
+						identifier:
+							key == 'local' ?
+								alias.local[ql.identifier] :
+								key == 'this' ? `${alias.this}.${ql.identifier}` :
+									undefined
+					}, value];
 				function resolve(expression) {
 					if (expression.depth == Infinity)
 						var [value, key] = global.scope.resolve(expression.identifier),
@@ -43,12 +55,34 @@ function qlsql(ql) {
 				break;
 			case 'property':
 				var [$expression, type] = qlsql.call(this, ql.expression);
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', identifier: ql.property }],
-					from: $expression,
-					alias: `_${i++}`
-				}, type[ql.property].type];
+				if (type[ql.property].value) {
+					var alias = `_${i++}`;
+					var [$value, type] = qlsql.call(
+						global.push(
+							Object.assign(
+								new Scope({}, type),
+								{ alias: { this: alias } }
+							)
+						),
+						type[ql.property].value
+					);
+					sql = [{
+						type: 'select',
+						with: {
+							name: alias,
+							value: selectize($expression)
+						},
+						field: [{ type: 'name', identifier: '*' }],
+						from: $value,
+						alias: `_${i++}`
+					}, type];
+				} else
+					sql = [{
+						type: 'select',
+						field: [{ type: 'name', identifier: ql.property }],
+						from: $expression,
+						alias: `_${i++}`
+					}, type[ql.property].type];
 				break;
 			case 'index':
 				var [$expression, type] = qlsql.call(this, ql.expression);
