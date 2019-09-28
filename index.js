@@ -1,4 +1,4 @@
-var { Scope } = require('ql');
+var { Scope, Expression } = require('ql');
 function qlsql(ql) {
 	var global = this;
 	var i = 0;
@@ -31,14 +31,22 @@ function qlsql(ql) {
 						scope.this[ql.identifier].value
 					);
 				else
-					sql = [{
-						type: 'name',
-						identifier:
-							key == 'local' ?
-								alias.local[ql.identifier] :
-								key == 'this' ? `${alias.this}.${ql.identifier}` :
-									undefined
-					}, value];
+					sql = [
+						ql.identifier == 'this' ?
+							qlsql.call(this, new Expression.Index(
+								new Expression.Name(typename(scope.this), Infinity),
+								new Expression.Name('id')
+							))[0] :
+							{
+								type: 'name',
+								identifier:
+									key == 'local' ?
+										alias.local[ql.identifier] :
+										key == 'this' ? `${alias.this}.${ql.identifier}` :
+											undefined
+							},
+						value
+					];
 				function resolve(expression) {
 					if (expression.depth == Infinity)
 						var [value, key] = global.scope.resolve(expression.identifier),
@@ -163,6 +171,12 @@ function qlsql(ql) {
 				break;
 		}
 		return sql;
+	}
+	function typename(type) {
+		var local = global.scope.local;
+		for (var name in local)
+			if (local[name][0] == type)
+				return name;
 	}
 }
 function operate(operator, left, right) {
