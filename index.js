@@ -35,7 +35,7 @@ function qlsql(ql) {
 						ql.identifier == 'this' ?
 							qlsql.call(this, new Expression.Index(
 								new Expression.Name(typename(scope.this), Infinity),
-								new Expression.Name('id')
+								new Expression.Name(require('ql/Type.id')(scope.this))
 							))[0] :
 							{
 								type: 'name',
@@ -103,7 +103,7 @@ function qlsql(ql) {
 					where: {
 						type: 'binary',
 						operator: '=',
-						left: { type: 'name', identifier: 'id' },
+						left: { type: 'name', identifier: require('ql/Type.id')(type[0]) },
 						right: $index
 					}
 				}, type[0]];
