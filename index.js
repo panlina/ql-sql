@@ -81,15 +81,17 @@ function qlsql(ql) {
 							value: selectize($expression)
 						},
 						field: [{ type: 'name', identifier: '*' }],
-						from: $value,
-						alias: `_${i++}`
+						from: Object.assign($value, {
+							alias: `_${i++}`
+						})
 					}, type];
 				} else
 					sql = [{
 						type: 'select',
 						field: [{ type: 'name', identifier: ql.property }],
-						from: $expression,
-						alias: `_${i++}`
+						from: Object.assign($expression, {
+							alias: `_${i++}`
+						})
 					}, type[ql.property].type];
 				break;
 			case 'index':
@@ -98,8 +100,9 @@ function qlsql(ql) {
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
-					from: $expression,
-					alias: `_${i++}`,
+					from: Object.assign($expression, {
+						alias: `_${i++}`
+					}),
 					where: {
 						type: 'binary',
 						operator: '=',
@@ -141,8 +144,9 @@ function qlsql(ql) {
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
-					from: $expression,
-					alias: alias,
+					from: Object.assign($expression, {
+						alias: alias
+					}),
 					where: $filter
 				}, type];
 				break;
@@ -165,8 +169,9 @@ function qlsql(ql) {
 						value: selectize($value)
 					},
 					field: [{ type: 'name', identifier: '*' }],
-					from: $body,
-					alias: `_${i++}`
+					from: Object.assign($body, {
+						alias: `_${i++}`
+					})
 				}, type];
 				break;
 		}
