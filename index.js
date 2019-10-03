@@ -17,34 +17,28 @@ function qlsql(ql) {
 				}, typeof ql.value];
 				break;
 			case 'name':
+				if (ql.sql) {
+					sql = [{ type: 'name', identifier: ql.identifier }];
+					break;
+				};
 				var [value, [depth, key]] = resolve.call(this, ql);
 				var scope = ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
-				if (key == 'this' && value.value)
-					sql = qlsql.call(
-						global.push(
-							Object.assign(
-								new Scope({}, scope.this),
-								{ alias: { this: alias.this } }
-							)
-						),
-						scope.this[ql.identifier].value
+				if (key == 'this')
+					sql = qlsql.call(this,
+						new Expression.Property(
+							new Expression.Name('this', depth),
+							ql.identifier
+						)
 					);
 				else
 					sql = [
-						ql.identifier == 'this' && !scope.local.this ?
-							qlsql.call(this, new Expression.Index(
-								new Expression.Name(typename(scope.this), Infinity),
-								new Expression.Name(require('ql/Type.id')(scope.this))
-							))[0] :
-							{
-								type: 'name',
-								identifier:
-									key == 'local' ?
-										alias.local[ql.identifier] :
-										key == 'this' ? `${alias.this}.${ql.identifier}` :
-											undefined
-							},
+						{
+							type: 'name',
+							identifier: ql.identifier == 'this' && !scope.local.this ?
+								alias.this :
+								alias.local[ql.identifier]
+						},
 						value
 					];
 				function resolve(expression) {
@@ -132,22 +126,28 @@ function qlsql(ql) {
 			case 'filter':
 				var alias = `_${i++}`;
 				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$filter] = qlsql.call(
-					this.push(
-						Object.assign(
-							new Scope({}, type[0]),
-							{ alias: { this: alias } }
-						)
-					),
-					ql.filter
-				);
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
 					from: Object.assign($expression, {
 						alias: alias
 					}),
-					where: $filter
+					where: qlsql.call(
+						this.push(new Scope({}, type[0])),
+						new Expression.Comma(
+							{
+								name: 'this',
+								value: new Expression.Index(
+									new Expression.Name(typename(type[0]), Infinity),
+									Object.assign(
+										new Expression.Name(`${alias}.${require('ql/Type.id')(type[0])}`),
+										{ sql: true }
+									)
+								)
+							},
+							ql.filter
+						)
+					)[0]
 				}, type];
 				break;
 			case 'comma':
