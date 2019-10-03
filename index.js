@@ -32,7 +32,7 @@ function qlsql(ql) {
 					);
 				else
 					sql = [
-						ql.identifier == 'this' ?
+						ql.identifier == 'this' && !scope.local.this ?
 							qlsql.call(this, new Expression.Index(
 								new Expression.Name(typename(scope.this), Infinity),
 								new Expression.Name(require('ql/Type.id')(scope.this))
