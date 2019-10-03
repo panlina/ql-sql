@@ -169,7 +169,7 @@ function qlsql(ql) {
 						value: selectize($value)
 					},
 					field: [{ type: 'name', identifier: '*' }],
-					from: Object.assign($body, {
+					from: Object.assign(tabulize($body), {
 						alias: `_${i++}`
 					})
 				}, type];
@@ -201,6 +201,16 @@ function operate(operator, left, right) {
 		case '||':
 			return 'boolean';
 	}
+}
+
+function tabulize(sql) {
+	if (sql.type != 'select')
+		if (sql.type != 'name')
+			sql = {
+				type: 'select',
+				field: [sql]
+			};
+	return sql;
 }
 
 function selectize(sql) {
