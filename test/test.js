@@ -5,7 +5,7 @@ var mysql = require('mysql');
 var qlsql = require('..');
 var type = require('./type');
 var type = require('lodash.mapvalues')(type, require('ql/Type.parse'));
-var type = require('lodash.mapvalues')(type, value => [value]);
+var local = require('lodash.mapvalues')(type, value => [value]);
 var connection;
 before(function () {
 	connection = mysql.createConnection({
@@ -20,8 +20,8 @@ after(function () {
 });
 it('', async function () {
 	var q = ql.parse("store");
-	var [sql, t] = qlsql.call(new ql.Environment(new ql.Scope(type)), q);
-	assert(require('ql/Type.equals')(t, type.store));
+	var [sql, t] = qlsql.call(new ql.Environment(new ql.Scope(local)), q);
+	assert(require('ql/Type.equals')(t, [type.store]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
