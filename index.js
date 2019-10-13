@@ -188,9 +188,9 @@ function qlsql(ql) {
 		return sql;
 	}
 	function typename(type) {
-		var local = global.scope.local;
-		for (var name in local)
-			if (local[name][0] == type)
+		var _type = global.scope.type;
+		for (var name in _type)
+			if (_type[name] == type)
 				return name;
 	}
 }
