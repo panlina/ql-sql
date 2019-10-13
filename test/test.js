@@ -20,7 +20,7 @@ after(function () {
 });
 it('', async function () {
 	var q = ql.parse("store");
-	var [sql, t] = qlsql.call(new ql.Environment(new ql.Scope(local)), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [type.store]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
