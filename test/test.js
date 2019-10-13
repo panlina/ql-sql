@@ -5,6 +5,7 @@ var mysql = require('mysql');
 var qlsql = require('..');
 var type = require('./type');
 var type = require('lodash.mapvalues')(type, require('ql/Type.parse'));
+var type = require('lodash.mapvalues')(type, value => [value]);
 var connection;
 before(function () {
 	connection = mysql.createConnection({
