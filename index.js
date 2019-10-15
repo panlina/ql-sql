@@ -117,11 +117,22 @@ function qlsql(ql) {
 				break;
 			case 'unary':
 				var [$operand, type] = qlsql.call(this, ql.operand);
-				sql = [{
-					type: 'unary',
-					operator: ql.operator,
-					operand: $operand
-				}, operate(ql.operator, type)];
+				sql = [
+					ql.operator == '#' ?
+						{
+							type: 'select',
+							field: [{ type: 'name', identifier: 'count(*)' }],
+							from: Object.assign($operand, {
+								alias: `_${i++}`
+							})
+						} :
+						{
+							type: 'unary',
+							operator: ql.operator,
+							operand: $operand
+						},
+					operate(ql.operator, type)
+				];
 				break;
 			case 'binary':
 				var [$left, typeLeft] = qlsql.call(this, ql.left);
@@ -210,6 +221,8 @@ function operate(operator, left, right) {
 		case '&&':
 		case '||':
 			return 'boolean';
+		case '#':
+			return 'number';
 	}
 }
 
