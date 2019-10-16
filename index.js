@@ -131,7 +131,7 @@ function qlsql(ql) {
 							operator: ql.operator,
 							operand: $operand
 						},
-					operate(ql.operator, type)
+					require('ql/Type.operate')(ql.operator, type)
 				];
 				break;
 			case 'binary':
@@ -142,7 +142,7 @@ function qlsql(ql) {
 					operator: ql.operator,
 					left: $left,
 					right: $right
-				}, operate(ql.operator, typeLeft, typeRight)];
+				}, require('ql/Type.operate')(ql.operator, typeLeft, typeRight)];
 				break;
 			case 'filter':
 				var alias = `_${i++}`;
@@ -203,26 +203,6 @@ function qlsql(ql) {
 		for (var name in _type)
 			if (_type[name] == type)
 				return name;
-	}
-}
-function operate(operator, left, right) {
-	switch (operator) {
-		case '+':
-			return left;
-		case '-':
-			return 'number';
-		case '<=':
-		case '=':
-		case '>=':
-		case '<':
-		case '!=':
-		case '>':
-		case '!':
-		case '&&':
-		case '||':
-			return 'boolean';
-		case '#':
-			return 'number';
 	}
 }
 
