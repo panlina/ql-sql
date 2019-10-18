@@ -147,28 +147,44 @@ function qlsql(ql) {
 			case 'filter':
 				var alias = `_${i++}`;
 				var [$expression, type] = qlsql.call(this, ql.expression);
+				var aliasThis = `_${i++}`;
+				var [$this] = qlsql.call(
+					global,
+					new Expression.Index(
+						new Expression.Name(typename(type[0]), Infinity),
+						Object.assign(
+							new Expression.Name(`${alias}.${require('ql/Type.id')(type[0])}`),
+							{ sql: true }
+						)
+					)
+				);
+				var [$filter] = qlsql.call(
+					this.push(
+						Object.assign(
+							new Scope({}, type[0]),
+							{ alias: { this: aliasThis } }
+						)
+					),
+					ql.filter
+				);
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
 					from: Object.assign($expression, {
 						alias: alias
 					}),
-					where: qlsql.call(
-						this.push(new Scope({}, type[0])),
-						new Expression.Comma(
-							{
-								name: 'this',
-								value: new Expression.Index(
-									new Expression.Name(typename(type[0]), Infinity),
-									Object.assign(
-										new Expression.Name(`${alias}.${require('ql/Type.id')(type[0])}`),
-										{ sql: true }
-									)
-								)
-							},
-							ql.filter
+					where: {
+						type: 'select',
+						with: {
+							name: aliasThis,
+							value: $this
+						},
+						field: [{ type: 'name', identifier: '*' }],
+						from: Object.assign(
+							$filter,
+							{ alias: `_${i++}` }
 						)
-					)[0]
+					}
 				}, type];
 				break;
 			case 'comma':
