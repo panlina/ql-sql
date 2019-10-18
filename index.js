@@ -151,7 +151,7 @@ function qlsql(ql) {
 				var [$this] = qlsql.call(
 					global,
 					new Expression.Index(
-						new Expression.Name(typename(type[0]), Infinity),
+						new Expression.Name(tablename(type[0]), Infinity),
 						Object.assign(
 							new Expression.Name(`${alias}.${require('ql/Type.id')(type[0])}`),
 							{ sql: true }
@@ -214,7 +214,7 @@ function qlsql(ql) {
 		}
 		return sql;
 	}
-	function typename(type) {
+	function tablename(type) {
 		var local = global.scope.local;
 		for (var name in local)
 			if (local[name][0] == type)
