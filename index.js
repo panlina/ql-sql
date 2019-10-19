@@ -58,13 +58,14 @@ function qlsql(ql) {
 			case 'this':
 				var type = global.scope.type[ql.identifier];
 				var depth = findDepth.call(this);
-				return qlsql.call(this, new Expression.Name('this', depth));
+				sql = qlsql.call(this, new Expression.Name('this', depth));
 				function findDepth() {
 					if (this.scope.this == type)
 						return 0;
 					if (this.parent)
 						return findDepth.call(this.parent) + 1;
 				}
+				break;
 			case 'property':
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				if (type[ql.property].value) {
