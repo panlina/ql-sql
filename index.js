@@ -33,7 +33,8 @@ function qlsql(ql) {
 							type: 'name',
 							identifier: ql.identifier == 'this' && !scope.local.this ?
 								alias.this :
-								alias.local[ql.identifier]
+								alias.local[ql.identifier],
+							kind: 'table'
 						},
 						value
 					];
@@ -229,7 +230,7 @@ function qlsql(ql) {
 
 function tabulize(sql) {
 	if (sql.type != 'select')
-		if (sql.type != 'name')
+		if (sql.type != 'name' || sql.kind == 'field')
 			sql = {
 				type: 'select',
 				field: [sql]
