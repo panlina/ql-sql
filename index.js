@@ -17,10 +17,6 @@ function qlsql(ql) {
 				}, typeof ql.value];
 				break;
 			case 'name':
-				if (ql.sql) {
-					sql = [{ type: 'name', identifier: ql.identifier }];
-					break;
-				};
 				var [value, [depth, key]] = resolve.call(this, ql);
 				var scope = ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
@@ -154,8 +150,13 @@ function qlsql(ql) {
 					new Expression.Index(
 						new Expression.Name(tablename(type[0]), Infinity),
 						Object.assign(
-							new Expression.Name(`${alias}.${require('ql/Type.id')(type[0])}`),
-							{ sql: true }
+							new Expression('sql'),
+							{
+								sql: {
+									type: 'name',
+									identifier: `${alias}.${require('ql/Type.id')(type[0])}`
+								}
+							}
 						)
 					)
 				);
@@ -211,6 +212,9 @@ function qlsql(ql) {
 						alias: `_${i++}`
 					})
 				}, type];
+				break;
+			case 'sql':
+				sql = [ql.sql];
 				break;
 		}
 		return sql;
