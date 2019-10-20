@@ -86,7 +86,7 @@ function qlsql(ql) {
 							value: selectize($expression)
 						},
 						field: [{ type: 'name', identifier: '*' }],
-						from: Object.assign($value, {
+						from: Object.assign(tabulize($value), {
 							alias: `_${i++}`
 						})
 					}, type];
@@ -182,7 +182,7 @@ function qlsql(ql) {
 						},
 						field: [{ type: 'name', identifier: '*' }],
 						from: Object.assign(
-							$filter,
+							tabulize($filter),
 							{ alias: `_${i++}` }
 						)
 					}
