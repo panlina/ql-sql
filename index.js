@@ -64,6 +64,32 @@ function qlsql(ql) {
 				}
 				break;
 			case 'property':
+				var thisResolution = resolveThis.call(this, ql.expression);
+				if (thisResolution) {
+					var [scope] = thisResolution;
+					if (!scope.this[ql.property].value && scope.alias.filteree) {
+						sql = [{
+							type: 'name',
+							identifier: `${scope.alias.filteree}.${ql.property}`,
+							kind: 'field'
+						}, scope.this[ql.property].type];
+						break;
+					}
+				}
+				function resolveThis(expression) {
+					if (expression.type == 'name' && expression.identifier == 'this') {
+						var [value, [depth, key]] = resolve.call(this, expression);
+						var scope = ancestor.call(this, global, depth).scope;
+						if (!scope.local.this)
+							return [scope, depth];
+					}
+					if (expression.type == 'this') {
+						var type = global.scope.type[expression.identifier];
+						var depth = findDepth.call(this, type);
+						var scope = ancestor.call(this, global, depth).scope;
+						return [scope, depth];
+					}
+				}
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				if (type[ql.property].value) {
 					var alias = `_${i++}`;
@@ -71,7 +97,7 @@ function qlsql(ql) {
 						global.push(
 							Object.assign(
 								new Scope({}, type),
-								{ alias: { this: alias } }
+								{ alias: { this: alias, filteree: thisResolution && thisResolution[0].alias.filteree } }
 							)
 						),
 						type[ql.property].value
@@ -165,7 +191,7 @@ function qlsql(ql) {
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
-							{ alias: { this: aliasThis } }
+							{ alias: { this: aliasThis, filteree: alias } }
 						)
 					),
 					ql.filter
