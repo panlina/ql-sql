@@ -29,6 +29,25 @@ it('', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('', async function () {
+	var q = ql.parse("store#1.address.city.country.country");
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, 'string'));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`
+			select country from country where country_id=(
+				select country_id from city where city_id=(
+					select city_id from address where address_id=(
+						select address_id from store where store_id=1
+					)
+				)
+			)
+		`)
+	]);
+	assert.deepEqual(actual, expected);
+});
 function query(sql) {
 	return new Promise((resolve, reject) => {
 		connection.query(sql, function (error, results) {

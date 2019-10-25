@@ -1,3 +1,25 @@
 {
-	"store": {}
+	"store": {
+		"store_id": ":number",
+		"address_id": ":number",
+		"address": "=::address#(this store.address_id)",
+		"$ql": { "id": "store_id" }
+	},
+	"address": {
+		"address_id": ":number",
+		"city_id": ":number",
+		"city": "=::city#(this address.city_id)",
+		"$ql": { "id": "address_id" }
+	},
+	"city": {
+		"city_id": ":number",
+		"country_id": ":number",
+		"country": "=::country#(this city.country_id)",
+		"$ql": { "id": "city_id" }
+	},
+	"country": {
+		"country_id": ":number",
+		"country": ":string",
+		"$ql": { "id": "country_id" }
+	}
 }
