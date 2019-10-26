@@ -1,4 +1,5 @@
 var { Scope, Expression } = require('ql');
+var Context = require('ql/Context');
 function qlsql(ql) {
 	var global = this;
 	var i = 0;
@@ -17,8 +18,8 @@ function qlsql(ql) {
 				}, typeof ql.value];
 				break;
 			case 'name':
-				var [value, [depth, key]] = resolve.call(this, ql);
-				var scope = ancestor.call(this, global, depth).scope;
+				var [value, [depth, key]] = Context.resolve.call(this, global, ql);
+				var scope = Context.ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
 				if (key == 'this')
 					sql = qlsql.call(this,
@@ -38,30 +39,11 @@ function qlsql(ql) {
 						},
 						value
 					];
-				function resolve(expression) {
-					if (expression.depth != null)
-						var [value, key] = ancestor.call(this, global, expression.depth).scope.resolve(expression.identifier),
-							depth = expression.depth;
-					else
-						var [value, [depth, key]] = this.resolve(expression.identifier);
-					return [value, [depth, key]];
-				}
-				function ancestor(global, depth) {
-					return depth == Infinity ?
-						global :
-						this.ancestor(depth);
-				}
 				break;
 			case 'this':
 				var type = global.scope.type[ql.identifier];
-				var depth = findDepth.call(this, type);
+				var depth = Context.findDepth.call(this, type);
 				sql = qlsql.call(this, new Expression.Name('this', depth));
-				function findDepth(type) {
-					if (this.scope.this == type)
-						return 0;
-					if (this.parent)
-						return findDepth.call(this.parent, type) + 1;
-				}
 				break;
 			case 'property':
 				var thisResolution = resolveThis.call(this, ql.expression);
@@ -78,15 +60,15 @@ function qlsql(ql) {
 				}
 				function resolveThis(expression) {
 					if (expression.type == 'name' && expression.identifier == 'this') {
-						var [value, [depth, key]] = resolve.call(this, expression);
-						var scope = ancestor.call(this, global, depth).scope;
+						var [value, [depth, key]] = Context.resolve.call(this, global, expression);
+						var scope = Context.ancestor.call(this, global, depth).scope;
 						if (!scope.local.this)
 							return [scope, depth];
 					}
 					if (expression.type == 'this') {
 						var type = global.scope.type[expression.identifier];
-						var depth = findDepth.call(this, type);
-						var scope = ancestor.call(this, global, depth).scope;
+						var depth = Context.findDepth.call(this, type);
+						var scope = Context.ancestor.call(this, global, depth).scope;
 						return [scope, depth];
 					}
 				}
