@@ -42,7 +42,7 @@ function qlsql(ql) {
 				break;
 			case 'this':
 				var type = global.scope.type[ql.identifier];
-				var depth = Context.findDepth.call(this, type);
+				var [, , , depth] = this.find(value => value == type, { key: 'local', name: 'this' });
 				sql = qlsql.call(this, new Expression.Name('this', depth));
 				break;
 			case 'property':
@@ -67,7 +67,7 @@ function qlsql(ql) {
 					}
 					if (expression.type == 'this') {
 						var type = global.scope.type[expression.identifier];
-						var depth = Context.findDepth.call(this, type);
+						var [, , , depth] = this.find(value => value == type, { key: 'local', name: 'this' });
 						var scope = Context.ancestor.call(this, global, depth).scope;
 						return [scope, depth];
 					}
