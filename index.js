@@ -181,7 +181,7 @@ function qlsql(ql) {
 						)
 					)
 				);
-				var [$filter] = qlsql.call(
+				var [$filter, typeFilter] = qlsql.call(
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
@@ -190,6 +190,7 @@ function qlsql(ql) {
 					),
 					ql.filter
 				);
+				$filter = truthy($filter, typeFilter);
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
@@ -238,6 +239,17 @@ function qlsql(ql) {
 				sql = [ql.sql];
 				break;
 		}
+		return sql;
+	}
+	function truthy(sql, type) {
+		if (typeof type == 'object')
+			sql = {
+				type: 'select',
+				field: [{ type: 'name', identifier: 'count(*)' }],
+				from: Object.assign(sql, {
+					alias: `_${i++}`
+				})
+			};
 		return sql;
 	}
 	function tablename(type) {
