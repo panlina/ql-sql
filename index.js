@@ -28,17 +28,34 @@ function qlsql(ql) {
 							ql.identifier
 						)
 					);
-				else
-					sql = [
-						{
-							type: 'name',
-							identifier: ql.identifier == 'this' && !scope.local.this ?
-								alias.this :
-								alias.local[ql.identifier],
-							kind: 'table'
-						},
-						value
-					];
+				else {
+					sql = ql.identifier == 'this' && !scope.local.this && alias.filteree ?
+						qlsql.call(
+							global,
+							new Expression.Index(
+								new Expression.Name(tablename(value), Infinity),
+								Object.assign(
+									new Expression('sql'),
+									{
+										sql: {
+											type: 'name',
+											identifier: `${alias.filteree}.${require('ql/Type.id')(value)}`
+										}
+									}
+								)
+							)
+						) :
+						[
+							{
+								type: 'name',
+								identifier: ql.identifier == 'this' && !scope.local.this ?
+									alias.this :
+									alias.local[ql.identifier],
+								kind: 'table'
+							},
+							value
+						];
+				}
 				break;
 			case 'this':
 				var type = global.scope.type[ql.identifier];
@@ -165,27 +182,11 @@ function qlsql(ql) {
 			case 'filter':
 				var alias = `_${i++}`;
 				var [$expression, type] = qlsql.call(this, ql.expression);
-				var aliasThis = `_${i++}`;
-				var [$this] = qlsql.call(
-					global,
-					new Expression.Index(
-						new Expression.Name(tablename(type[0]), Infinity),
-						Object.assign(
-							new Expression('sql'),
-							{
-								sql: {
-									type: 'name',
-									identifier: `${alias}.${require('ql/Type.id')(type[0])}`
-								}
-							}
-						)
-					)
-				);
 				var [$filter, typeFilter] = qlsql.call(
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
-							{ alias: { this: aliasThis, filteree: alias } }
+							{ alias: { filteree: alias } }
 						)
 					),
 					ql.filter
@@ -197,18 +198,7 @@ function qlsql(ql) {
 					from: Object.assign($expression, {
 						alias: alias
 					}),
-					where: {
-						type: 'select',
-						with: {
-							name: aliasThis,
-							value: $this
-						},
-						field: [{ type: 'name', identifier: '*' }],
-						from: Object.assign(
-							tabulize($filter),
-							{ alias: `_${i++}` }
-						)
-					}
+					where: $filter
 				}, type];
 				break;
 			case 'comma':
