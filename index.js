@@ -49,14 +49,26 @@ function qlsql(ql) {
 				var thisResolution = resolveThis.call(this, ql.expression);
 				if (thisResolution) {
 					var [scope] = thisResolution;
-					if (!scope.this[ql.property].value && scope.alias.filteree) {
-						sql = [{
-							type: 'name',
-							identifier: `${scope.alias.filteree}.${ql.property}`,
-							kind: 'field'
-						}, scope.this[ql.property].type];
+					if (scope.this[ql.property].value) {
+						sql = qlsql.call(
+							global.push(
+								Object.assign(
+									new Scope({}, scope.this),
+									{ alias: { this: scope.alias.this, filteree: scope.alias.filteree } }
+								)
+							),
+							scope.this[ql.property].value
+						);
 						break;
-					}
+					} else
+						if (scope.alias.filteree) {
+							sql = [{
+								type: 'name',
+								identifier: `${scope.alias.filteree}.${ql.property}`,
+								kind: 'field'
+							}, scope.this[ql.property].type];
+							break;
+						}
 				}
 				function resolveThis(expression) {
 					if (expression.type == 'name' && expression.identifier == 'this') {
@@ -79,7 +91,7 @@ function qlsql(ql) {
 						global.push(
 							Object.assign(
 								new Scope({}, type),
-								{ alias: { this: alias, filteree: thisResolution && thisResolution[0].alias.filteree } }
+								{ alias: { this: alias } }
 							)
 						),
 						type[ql.property].value
