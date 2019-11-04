@@ -234,11 +234,9 @@ function qlsql(ql) {
 	function truthy(sql, type) {
 		if (typeof type == 'object')
 			sql = {
-				type: 'select',
-				field: [{ type: 'name', identifier: 'count(*)' }],
-				from: Object.assign(sql, {
-					alias: `_${i++}`
-				})
+				type: 'unary',
+				operator: 'exists',
+				operand: sql
 			};
 		return sql;
 	}
