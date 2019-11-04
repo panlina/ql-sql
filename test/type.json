@@ -21,5 +21,22 @@
 		"country_id": ":number",
 		"country": ":string",
 		"$ql": { "id": "country_id" }
+	},
+	"actor": {
+		"actor_id": ":number",
+		"first_name": ":string",
+		"last_name": ":string",
+		"films": "=::film|(::film_actor|film_id=this film.film_id && actor_id=this actor.actor_id)",
+		"$ql": { "id": "actor_id" }
+	},
+	"film": {
+		"film_id": ":number",
+		"title": ":string",
+		"actors": "=::actor|(::film_actor|actor_id=this actor.actor_id && film_id=this film.film_id)",
+		"$ql": { "id": "film_id" }
+	},
+	"film_actor": {
+		"actor_id": ":number",
+		"film_id": ":number"
 	}
 }

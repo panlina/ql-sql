@@ -48,6 +48,22 @@ it('', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('', async function () {
+	var q = ql.parse("actor#1.films");
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, [type.film]));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`
+			select film.* from film_actor
+			join film on film_actor.film_id=film.film_id
+			join actor on film_actor.actor_id=actor.actor_id
+			where actor.actor_id=1;
+		`)
+	]);
+	assert.deepEqual(actual, expected);
+});
 function query(sql) {
 	return new Promise((resolve, reject) => {
 		connection.query(sql, function (error, results) {
