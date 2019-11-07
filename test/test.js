@@ -18,7 +18,7 @@ before(function () {
 after(function () {
 	connection.end();
 });
-it('', async function () {
+it('store', async function () {
 	var q = ql.parse("store");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [type.store]));
@@ -29,7 +29,7 @@ it('', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
-it('', async function () {
+it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'string'));
@@ -48,7 +48,7 @@ it('', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
-it('', async function () {
+it('actor#1.films', async function () {
 	var q = ql.parse("actor#1.films");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [type.film]));
