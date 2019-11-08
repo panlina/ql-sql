@@ -113,17 +113,15 @@ function qlsql(ql) {
 						),
 						type[ql.property].value
 					);
-					sql = [{
-						type: 'select',
-						with: {
+					sql = [require('./sql').with(
+						{
 							name: alias,
 							value: selectize($expression)
 						},
-						field: [{ type: 'name', identifier: '*' }],
-						from: Object.assign(tabulize($value), {
+						Object.assign(tabulize($value), {
 							alias: `_${i++}`
 						})
-					}, type];
+					), type];
 				} else
 					sql = [{
 						type: 'select',
@@ -213,17 +211,15 @@ function qlsql(ql) {
 					),
 					ql.body
 				);
-				sql = [{
-					type: 'select',
-					with: {
+				sql = [require('./sql').with(
+					{
 						name: alias,
 						value: selectize($value)
 					},
-					field: [{ type: 'name', identifier: '*' }],
-					from: Object.assign(tabulize($body), {
+					Object.assign(tabulize($body), {
 						alias: `_${i++}`
 					})
-				}, type];
+				), type];
 				break;
 			case 'sql':
 				sql = [ql.sql];
