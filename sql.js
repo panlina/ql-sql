@@ -9,3 +9,7 @@ exports.with = function (head, body) {
 	body.with = head;
 	return body;
 };
+exports.count = function (sql) {
+	sql.field = [{ type: 'name', identifier: 'count(*)' }];
+	return sql;
+};

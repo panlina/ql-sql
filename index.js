@@ -152,13 +152,11 @@ function qlsql(ql) {
 				var [$operand, type] = qlsql.call(this, ql.operand);
 				sql = [
 					ql.operator == '#' ?
-						{
-							type: 'select',
-							field: [{ type: 'name', identifier: 'count(*)' }],
-							from: Object.assign($operand, {
+						require('./sql').count(
+							Object.assign($operand, {
 								alias: `_${i++}`
 							})
-						} :
+						) :
 						{
 							type: 'unary',
 							operator: ql.operator,
