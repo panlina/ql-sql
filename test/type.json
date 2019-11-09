@@ -38,5 +38,13 @@
 	"film_actor": {
 		"actor_id": ":number",
 		"film_id": ":number"
+	},
+	"inventory": {
+		"inventory_id": ":number",
+		"film_id": ":number",
+		"store_id": ":number",
+		"film": "=::film#(this inventory.film_id)",
+		"store": "=::store#(this inventory.store_id)",
+		"$ql": { "id": "inventory_id" }
 	}
 }
