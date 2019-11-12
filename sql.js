@@ -13,3 +13,7 @@ exports.count = function (sql) {
 	sql.field = [{ type: 'name', identifier: 'count(*)' }];
 	return sql;
 };
+exports.project = function (sql, field) {
+	sql.field = [{ type: 'name', identifier: field }];
+	return sql;
+};

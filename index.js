@@ -123,13 +123,10 @@ function qlsql(ql) {
 						})
 					), type];
 				} else
-					sql = [{
-						type: 'select',
-						field: [{ type: 'name', identifier: ql.property }],
-						from: Object.assign($expression, {
-							alias: `_${i++}`
-						})
-					}, type[ql.property].type];
+					sql = [require('./sql').project(
+						$expression,
+						ql.property
+					), type[ql.property].type];
 				break;
 			case 'index':
 				var [$expression, type] = qlsql.call(this, ql.expression);
