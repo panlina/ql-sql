@@ -130,39 +130,32 @@ function qlsql(ql) {
 						alias: `_${i++}`
 					}),
 					where: {
-						type: 'binary',
+						type: 'operation',
 						operator: '=',
 						left: { type: 'name', identifier: require('ql/Type.id')(type[0]) },
 						right: $index
 					}
 				}, type[0]];
 				break;
-			case 'unary':
-				var [$operand, type] = qlsql.call(this, ql.operand);
+			case 'operation':
+				if (ql.left)
+					var [$left, typeLeft] = qlsql.call(this, ql.left);
+				if (ql.right)
+					var [$right, typeRight] = qlsql.call(this, ql.right);
 				sql = [
 					ql.operator == '#' ?
 						require('./sql').count(
-							Object.assign($operand, {
+							Object.assign($left, {
 								alias: `_${i++}`
 							})
-						) :
-						{
-							type: 'unary',
+						) : {
+							type: 'operation',
 							operator: ql.operator,
-							operand: $operand
+							left: $left,
+							right: $right
 						},
-					require('ql/Type.operate')(ql.operator, type)
+					require('ql/Type.operate')(ql.operator, typeLeft, typeRight)
 				];
-				break;
-			case 'binary':
-				var [$left, typeLeft] = qlsql.call(this, ql.left);
-				var [$right, typeRight] = qlsql.call(this, ql.right);
-				sql = [{
-					type: 'binary',
-					operator: ql.operator,
-					left: $left,
-					right: $right
-				}, require('ql/Type.operate')(ql.operator, typeLeft, typeRight)];
 				break;
 			case 'filter':
 				var alias = `_${i++}`;
@@ -217,9 +210,9 @@ function qlsql(ql) {
 	function truthy(sql, type) {
 		if (typeof type == 'object')
 			sql = {
-				type: 'unary',
+				type: 'operation',
 				operator: 'exists',
-				operand: sql
+				right: sql
 			};
 		return sql;
 	}
