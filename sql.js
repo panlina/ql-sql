@@ -10,10 +10,22 @@ exports.with = function (head, body) {
 	return body;
 };
 exports.count = function (sql) {
+	if (sql.type == 'name')
+		return {
+			type: 'select',
+			field: [{ type: 'name', identifier: 'count(*)' }],
+			from: sql
+		};
 	sql.field = [{ type: 'name', identifier: 'count(*)' }];
 	return sql;
 };
 exports.project = function (sql, field) {
+	if (sql.type == 'name')
+		return {
+			type: 'select',
+			field: [{ type: 'name', identifier: field }],
+			from: sql
+		};
 	sql.field = [{ type: 'name', identifier: field }];
 	return sql;
 };
