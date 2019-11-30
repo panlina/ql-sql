@@ -46,15 +46,13 @@ function qlsql(ql) {
 							)
 						) :
 						[
-							ql.identifier == 'this' && !scope.local.this && typeof alias.this == 'object' ?
-								alias.this :
-								{
-									type: 'name',
-									identifier: ql.identifier == 'this' && !scope.local.this ?
-										alias.this :
-										alias.local[ql.identifier],
-									kind: 'table'
-								},
+							{
+								type: 'name',
+								identifier: ql.identifier == 'this' && !scope.local.this ?
+									alias.this :
+									alias.local[ql.identifier],
+								kind: 'table'
+							},
 							value
 						];
 				}
@@ -105,15 +103,25 @@ function qlsql(ql) {
 				}
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				if (type[ql.property].value) {
-					sql = qlsql.call(
+					var alias = `_${i++}`;
+					var [$value, type] = qlsql.call(
 						global.push(
 							Object.assign(
 								new Scope({}, type),
-								{ alias: { this: $expression } }
+								{ alias: { this: alias } }
 							)
 						),
 						type[ql.property].value
 					);
+					sql = [require('./sql').with(
+						{
+							name: alias,
+							value: selectize($expression)
+						},
+						Object.assign(tabulize($value), {
+							alias: `_${i++}`
+						})
+					), type];
 				} else
 					sql = [require('./sql').project(
 						$expression,
