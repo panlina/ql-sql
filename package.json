@@ -17,7 +17,7 @@
     "mocha": "^6.2.0",
     "mysql": "^2.17.0",
     "ql": "git+https://github.com/panlina/ql.git",
-    "sql-generate": "git+https://github.com/panlina/sql-generate.git"
+    "sql": "git+https://github.com/panlina/sql.git"
   },
   "scripts": {
     "test": "mocha"

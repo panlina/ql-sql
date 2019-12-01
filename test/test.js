@@ -1,6 +1,6 @@
 var assert = require('assert');
 var ql = require('ql');
-var generate = require('sql-generate');
+var generate = require('sql').generate;
 var mysql = require('mysql');
 var qlsql = require('..');
 var type = require('./type');
