@@ -113,20 +113,25 @@ function qlsql(ql) {
 						),
 						type[ql.property].value
 					);
-					sql = [require('./sql').with(
-						{
+					sql = [{
+						type: 'select',
+						with: {
 							name: alias,
 							value: selectize($expression)
 						},
-						Object.assign(tabulize($value), {
+						field: [{ type: 'name', identifier: '*' }],
+						from: Object.assign(tabulize($value), {
 							alias: `_${i++}`
 						})
-					), type];
+					}, type];
 				} else
-					sql = [require('./sql').project(
-						$expression,
-						ql.property
-					), type[ql.property].type];
+					sql = [{
+						type: 'select',
+						field: [{ type: 'name', identifier: ql.property }],
+						from: Object.assign($expression, {
+							alias: `_${i++}`
+						})
+					}, type[ql.property].type];
 				break;
 			case 'index':
 				var [$expression, type] = qlsql.call(this, ql.expression);
@@ -152,11 +157,13 @@ function qlsql(ql) {
 					var [$right, typeRight] = qlsql.call(this, ql.right);
 				sql = [
 					ql.operator == '#' ?
-						require('./sql').count(
-							Object.assign($left, {
+						{
+							type: 'select',
+							field: [{ type: 'name', identifier: 'count(*)' }],
+							from: Object.assign($left, {
 								alias: `_${i++}`
 							})
-						) : {
+						} : {
 							type: 'operation',
 							operator: ql.operator,
 							left: $left,
@@ -199,15 +206,17 @@ function qlsql(ql) {
 					),
 					ql.body
 				);
-				sql = [require('./sql').with(
-					{
+				sql = [{
+					type: 'select',
+					with: {
 						name: alias,
 						value: selectize($value)
 					},
-					Object.assign(tabulize($body), {
+					field: [{ type: 'name', identifier: '*' }],
+					from: Object.assign(tabulize($body), {
 						alias: `_${i++}`
 					})
-				), type];
+				}, type];
 				break;
 			case 'sql':
 				sql = [ql.sql];
