@@ -1,5 +1,7 @@
 var { Scope, Expression } = require('ql');
 var Context = require('ql/Context');
+var QL = Symbol('ql');
+var TYPE = Symbol('type');
 function qlsql(ql) {
 	var global = this;
 	var i = 0;
@@ -7,6 +9,7 @@ function qlsql(ql) {
 	for (var name in this.scope.local)
 		this.scope.alias.local[name] = name;
 	var [sql, type] = qlsql.call(this, ql);
+	inlineProperties(sql);
 	sql = require('sql').reduce(sql);
 	return [selectize(sql), type];
 	function qlsql(ql) {
@@ -223,7 +226,38 @@ function qlsql(ql) {
 				sql = [ql.sql];
 				break;
 		}
+		sql[0][QL] = ql;
+		ql[TYPE] = sql[1];
 		return sql;
+	}
+	// inline properties whose this is referenced only 1 time
+	function inlineProperties(sql) {
+		var root = {
+			type: 'select',
+			field: [{ type: 'name', identifier: '*' }],
+			from: sql
+		};
+		var reference = {}, definition = {};
+		for (var [sql, node] of require('sql').traverse(root)) {
+			var ql = sql[QL];
+			if (!ql) continue;	// Expression.This may be skipped due to this resolution in Expression.Property
+			if (ql.type == 'property' && ql.expression[TYPE] && ql.expression[TYPE][ql.property].value) {
+				reference[sql.with.name] = [];
+				definition[sql.with.name] = node;
+			}
+			if (sql.type == 'name' && sql.identifier in definition)
+				reference[sql.identifier].push(node);
+		}
+		for (var alias of Object.keys(reference).reverse())	// perform substitution from inner to outer to ensure nodes are valid
+			if (reference[alias].length <= 1) {
+				for (var node of reference[alias]) {
+					var value = definition[alias].value.with.value;
+					if (node.expression.type == 'select' && node.property == 'from')
+						value = { __proto__: value, alias: `_${i++}` };
+					node.value = value;
+				};
+				delete definition[alias].value.with;
+			}
 	}
 	function truthy(sql, type) {
 		if (typeof type == 'object')
