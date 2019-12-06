@@ -7,6 +7,7 @@ function qlsql(ql) {
 	for (var name in this.scope.local)
 		this.scope.alias.local[name] = name;
 	var [sql, type] = qlsql.call(this, ql);
+	sql = require('sql').reduce(sql);
 	return [selectize(sql), type];
 	function qlsql(ql) {
 		var sql;
