@@ -19,7 +19,14 @@ function qlsql(ql) {
 				}, typeof ql.value];
 				break;
 			case 'name':
-				var [value, [depth, key]] = Context.resolve.call(this, global, ql);
+				var resolution = Context.resolve.call(this, global, ql);
+				if (!resolution)
+					if (ql.identifier in constant) {
+						var $identifier = ql.identifier;
+						sql = [runtime.constant[$identifier], constant[ql.identifier]];
+						break;
+					}
+				var [value, [depth, key]] = resolution;
 				var scope = Context.ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
 				if (key == 'this')
@@ -241,6 +248,16 @@ function qlsql(ql) {
 				return name;
 	}
 }
+var constant = {
+	false: 'boolean',
+	true: 'boolean'
+};
+var runtime = {
+	constant: {
+		false: { type: 'name', identifier: 'false', kind: 'scalar' },
+		true: { type: 'name', identifier: 'true', kind: 'scalar' }
+	}
+};
 
 function tabulize(sql) {
 	if (sql.type != 'select')
@@ -254,7 +271,7 @@ function tabulize(sql) {
 
 function selectize(sql) {
 	if (sql.type != 'select')
-		if (sql.type == 'name')
+		if (sql.type == 'name' && sql.kind != 'scalar')
 			sql = {
 				type: 'select',
 				field: [{ type: 'name', identifier: '*' }],
