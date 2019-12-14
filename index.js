@@ -83,7 +83,7 @@ function qlsql(ql) {
 							sql = [{
 								type: 'name',
 								identifier: `${scope.alias.filteree}.${ql.property}`,
-								kind: 'field'
+								kind: 'scalar'
 							}, scope.this[ql.property].type];
 							break;
 						}
@@ -244,7 +244,7 @@ function qlsql(ql) {
 
 function tabulize(sql) {
 	if (sql.type != 'select')
-		if (sql.type != 'name' || sql.kind == 'field')
+		if (sql.type != 'name' || sql.kind == 'scalar')
 			sql = {
 				type: 'select',
 				field: [sql]
