@@ -158,6 +158,10 @@ function qlsql(ql) {
 					}
 				}, type[0]];
 				break;
+			case 'call':
+				var [$expression, type] = qlsql.call(this, ql.expression);
+				sql = [$expression(qlsql.bind(this))(ql.argument), type.result];
+				break;
 			case 'operation':
 				if (ql.left)
 					var [$left, typeLeft] = qlsql.call(this, ql.left);
@@ -250,12 +254,14 @@ function qlsql(ql) {
 }
 var constant = {
 	false: 'boolean',
-	true: 'boolean'
+	true: 'boolean',
+	length: new (require('ql/Type').Function)('string', 'number')
 };
 var runtime = {
 	constant: {
 		false: { type: 'name', identifier: 'false', kind: 'scalar' },
-		true: { type: 'name', identifier: 'true', kind: 'scalar' }
+		true: { type: 'name', identifier: 'true', kind: 'scalar' },
+		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, arguments: [qlsql(argument)[0]] })
 	}
 };
 

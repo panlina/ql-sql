@@ -40,6 +40,17 @@ it('false', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('length "abc"', async function () {
+	var q = ql.parse('length "abc"');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select length("abc")')
+	]);
+	assert.deepEqual(actual, expected);
+});
 it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
