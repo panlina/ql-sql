@@ -26,13 +26,13 @@
 		"actor_id": ":number",
 		"first_name": ":string",
 		"last_name": ":string",
-		"films": "=::film where (::film_actor where film_id=this film.film_id && actor_id=this actor.actor_id)",
+		"films": "=::film where (::film_actor where film_id=this film.film_id & actor_id=this actor.actor_id)",
 		"$ql": { "id": "actor_id" }
 	},
 	"film": {
 		"film_id": ":number",
 		"title": ":string",
-		"actors": "=::actor where (::film_actor where actor_id=this actor.actor_id && film_id=this film.film_id)",
+		"actors": "=::actor where (::film_actor where actor_id=this actor.actor_id & film_id=this film.film_id)",
 		"$ql": { "id": "film_id" }
 	},
 	"film_actor": {

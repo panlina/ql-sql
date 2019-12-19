@@ -177,7 +177,7 @@ function qlsql(ql) {
 							})
 						} : {
 							type: 'operation',
-							operator: ql.operator,
+							operator: operator[ql.operator] || ql.operator,
 							left: $left,
 							right: $right
 						},
@@ -263,6 +263,10 @@ var runtime = {
 		true: { type: 'name', identifier: 'true', kind: 'scalar' },
 		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, arguments: [qlsql(argument)[0]] })
 	}
+};
+var operator = {
+	'&': '&&',
+	'|': '||'
 };
 
 function tabulize(sql) {
