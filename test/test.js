@@ -87,7 +87,7 @@ it('actor#1.films', async function () {
 	assert.deepEqual(actual, expected);
 });
 it("How many Academy Dinosaur's are available from store 1?", async function () {
-	var q = ql.parse('(inventory|store_id=1&&film.title="ACADEMY DINOSAUR")#');
+	var q = ql.parse('(inventory where store_id=1&&film.title="ACADEMY DINOSAUR")#');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'number'));
 	var sql = generate(sql);
