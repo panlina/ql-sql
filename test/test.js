@@ -1,10 +1,12 @@
+var fs = require('fs');
+var path = require('path');
 var assert = require('assert');
 var ql = require('ql');
 var generate = require('sql').generate;
 var mysql = require('mysql');
 var qlsql = require('..');
-var type = require('./type');
-var type = require('lodash.mapvalues')(type, require('ql/Type.parse'));
+var type = ql.parse(fs.readFileSync(path.join(__dirname, 'type.ql'), 'utf8'), 'Declarations');
+var type = require('ql/Type.compile')(type);
 var local = require('lodash.mapvalues')(type, value => [value]);
 var connection;
 before(function () {
