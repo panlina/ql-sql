@@ -37,7 +37,7 @@ function qlsql(ql) {
 						)
 					);
 				else {
-					sql = ql.identifier == 'this' && !scope.local.this && alias.filteree ?
+					sql = ql.identifier == 'this' && !scope.local.this && alias.from ?
 						qlsql.call(
 							global,
 							new Expression.Index(
@@ -47,7 +47,7 @@ function qlsql(ql) {
 									{
 										sql: {
 											type: 'name',
-											identifier: `${alias.filteree}.${require('ql/Type.id')(value)}`
+											identifier: `${alias.from}.${require('ql/Type.id')(value)}`
 										}
 									}
 								)
@@ -79,17 +79,17 @@ function qlsql(ql) {
 							global.push(
 								Object.assign(
 									new Scope({}, scope.this),
-									{ alias: { this: scope.alias.this, filteree: scope.alias.filteree } }
+									{ alias: { this: scope.alias.this, from: scope.alias.from } }
 								)
 							),
 							scope.this[ql.property].value
 						);
 						break;
 					} else
-						if (scope.alias.filteree) {
+						if (scope.alias.from) {
 							sql = [{
 								type: 'name',
-								identifier: `${scope.alias.filteree}.${ql.property}`,
+								identifier: `${scope.alias.from}.${ql.property}`,
 								kind: 'scalar'
 							}, scope.this[ql.property].type];
 							break;
@@ -191,7 +191,7 @@ function qlsql(ql) {
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
-							{ alias: { filteree: alias } }
+							{ alias: { from: alias } }
 						)
 					),
 					ql.filter
