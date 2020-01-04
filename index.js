@@ -144,16 +144,17 @@ function qlsql(ql) {
 			case 'index':
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				var [$index] = qlsql.call(this, ql.index);
+				var alias = `_${i++}`;
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', identifier: '*' }],
 					from: Object.assign($expression, {
-						alias: `_${i++}`
+						alias: alias
 					}),
 					where: {
 						type: 'operation',
 						operator: '=',
-						left: { type: 'name', identifier: require('ql/Type.id')(type[0]) },
+						left: { type: 'name', identifier: `${alias}.${require('ql/Type.id')(type[0])}` },
 						right: $index
 					}
 				}, type[0]];
