@@ -47,7 +47,8 @@ function qlsql(ql) {
 									{
 										sql: {
 											type: 'name',
-											identifier: `${alias.from}.${require('ql/Type.id')(value)}`
+											qualifier: alias.from,
+											identifier: require('ql/Type.id')(value)
 										}
 									}
 								)
@@ -89,7 +90,8 @@ function qlsql(ql) {
 						if (scope.alias.from) {
 							sql = [{
 								type: 'name',
-								identifier: `${scope.alias.from}.${ql.property}`,
+								qualifier: scope.alias.from,
+								identifier: ql.property,
 								kind: 'scalar'
 							}, scope.this[ql.property].type];
 							break;
@@ -154,7 +156,7 @@ function qlsql(ql) {
 					where: {
 						type: 'operation',
 						operator: '=',
-						left: { type: 'name', identifier: `${alias}.${require('ql/Type.id')(type[0])}` },
+						left: { type: 'name', qualifier: alias, identifier: require('ql/Type.id')(type[0]) },
 						right: $index
 					}
 				}, type[0]];
