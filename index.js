@@ -174,7 +174,11 @@ function qlsql(ql) {
 					ql.operator == '#' ?
 						{
 							type: 'select',
-							field: [{ type: 'name', identifier: 'count(*)' }],
+							field: [{
+								type: 'call',
+								callee: { type: 'name', identifier: 'count' },
+								argument: [{ type: 'name', identifier: '*' }]
+							}],
 							from: Object.assign($left, {
 								alias: `_${i++}`
 							})
