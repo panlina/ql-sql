@@ -264,7 +264,7 @@ var runtime = {
 	constant: {
 		false: { type: 'name', identifier: 'false', kind: 'scalar' },
 		true: { type: 'name', identifier: 'true', kind: 'scalar' },
-		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, arguments: [qlsql(argument)[0]] })
+		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, argument: [qlsql(argument)[0]] })
 	}
 };
 var operator = {
