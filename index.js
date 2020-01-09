@@ -113,25 +113,26 @@ function qlsql(ql) {
 				}
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				if (type[ql.property].value) {
-					var alias = `_${i++}`;
+					var aliasThis = `_${i++}`;
 					var [$value, type] = qlsql.call(
 						global.push(
 							Object.assign(
 								new Scope({}, type),
-								{ alias: { this: alias } }
+								{ alias: { this: aliasThis } }
 							)
 						),
 						type[ql.property].value
 					);
+					var aliasValue = `_${i++}`;
 					sql = [{
 						type: 'select',
 						with: {
-							name: alias,
+							name: aliasThis,
 							value: selectize($expression)
 						},
-						field: [{ type: 'name', identifier: '*' }],
+						field: [{ type: 'name', qualifier: aliasValue, identifier: '*' }],
 						from: Object.assign(tabulize($value), {
-							alias: `_${i++}`
+							alias: aliasValue
 						})
 					}, type];
 				} else
@@ -149,7 +150,7 @@ function qlsql(ql) {
 				var alias = `_${i++}`;
 				sql = [{
 					type: 'select',
-					field: [{ type: 'name', identifier: '*' }],
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
 					from: Object.assign($expression, {
 						alias: alias
 					}),
@@ -206,7 +207,7 @@ function qlsql(ql) {
 				$filter = truthy($filter, typeFilter);
 				sql = [{
 					type: 'select',
-					field: [{ type: 'name', identifier: '*' }],
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
 					from: Object.assign($expression, {
 						alias: alias
 					}),
@@ -214,26 +215,27 @@ function qlsql(ql) {
 				}, type];
 				break;
 			case 'comma':
-				var alias = `_${i++}`;
+				var aliasHead = `_${i++}`;
 				var [$value, type] = qlsql.call(this, ql.head.value);
 				var [$body, type] = qlsql.call(
 					this.push(
 						Object.assign(
 							new Scope({ [ql.head.name]: type }),
-							{ alias: { local: { [ql.head.name]: alias } } }
+							{ alias: { local: { [ql.head.name]: aliasHead } } }
 						)
 					),
 					ql.body
 				);
+				var aliasBody = `_${i++}`;
 				sql = [{
 					type: 'select',
 					with: {
-						name: alias,
+						name: aliasHead,
 						value: selectize($value)
 					},
-					field: [{ type: 'name', identifier: '*' }],
+					field: [{ type: 'name', qualifier: aliasBody, identifier: '*' }],
 					from: Object.assign(tabulize($body), {
-						alias: `_${i++}`
+						alias: aliasBody
 					})
 				}, type];
 				break;
