@@ -131,17 +131,17 @@ function qlsql(ql) {
 							value: selectize($expression)
 						},
 						field: [{ type: 'name', qualifier: aliasValue, identifier: '*' }],
-						from: Object.assign(tabulize($value), {
+						from: [Object.assign(tabulize($value), {
 							alias: aliasValue
-						})
+						})]
 					}, type];
 				} else
 					sql = [{
 						type: 'select',
 						field: [{ type: 'name', identifier: ql.property }],
-						from: Object.assign($expression, {
+						from: [Object.assign($expression, {
 							alias: `_${i++}`
-						})
+						})]
 					}, type[ql.property].type];
 				break;
 			case 'index':
@@ -151,9 +151,9 @@ function qlsql(ql) {
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: Object.assign($expression, {
+					from: [Object.assign($expression, {
 						alias: alias
-					}),
+					})],
 					where: {
 						type: 'operation',
 						operator: '=',
@@ -180,9 +180,9 @@ function qlsql(ql) {
 								callee: { type: 'name', identifier: 'count' },
 								argument: [{ type: 'name', identifier: '*' }]
 							}],
-							from: Object.assign($left, {
+							from: [Object.assign($left, {
 								alias: `_${i++}`
-							})
+							})]
 						} : {
 							type: 'operation',
 							operator: operator[ql.operator] || ql.operator,
@@ -208,9 +208,9 @@ function qlsql(ql) {
 				sql = [{
 					type: 'select',
 					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: Object.assign($expression, {
+					from: [Object.assign($expression, {
 						alias: alias
-					}),
+					})],
 					where: $filter
 				}, type];
 				break;
@@ -234,9 +234,9 @@ function qlsql(ql) {
 						value: selectize($value)
 					},
 					field: [{ type: 'name', qualifier: aliasBody, identifier: '*' }],
-					from: Object.assign(tabulize($body), {
+					from: [Object.assign(tabulize($body), {
 						alias: aliasBody
-					})
+					})]
 				}, type];
 				break;
 			case 'sql':
@@ -283,7 +283,8 @@ function tabulize(sql) {
 		if (sql.type != 'name' || sql.kind == 'scalar')
 			sql = {
 				type: 'select',
-				field: [sql]
+				field: [sql],
+				from: []
 			};
 	return sql;
 }
@@ -294,12 +295,13 @@ function selectize(sql) {
 			sql = {
 				type: 'select',
 				field: [{ type: 'name', identifier: '*' }],
-				from: sql
+				from: [sql]
 			};
 		else
 			sql = {
 				type: 'select',
-				field: [sql]
+				field: [sql],
+				from: []
 			};
 	return sql;
 }
