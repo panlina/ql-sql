@@ -88,6 +88,66 @@ it('actor#1.films', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+describe('map', function () {
+	it('store map address', async function () {
+		var q = ql.parse("store map this map address");
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		assert(require('ql/Type.equals')(t, [type.address]));
+		var sql = generate(sql);
+		var [actual, expected] = await Promise.all([
+			query(sql),
+			query(`
+				select address.* from store, address
+				where address.address_id=store.address_id
+			`)
+		]);
+		assert.deepEqual(actual, expected);
+	});
+	it('store map address.city', async function () {
+		var q = ql.parse("store map address.city");
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		assert(require('ql/Type.equals')(t, [type.city]));
+		var sql = generate(sql);
+		var [actual, expected] = await Promise.all([
+			query(sql),
+			query(`
+				select city.* from store, address, city
+				where address.address_id=store.address_id and city.city_id=address.city_id
+			`)
+		]);
+		assert.deepEqual(actual, expected);
+	});
+	it('store map address.city.country', async function () {
+		var q = ql.parse("store map address.city.country");
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		assert(require('ql/Type.equals')(t, [type.country]));
+		var sql = generate(sql);
+		var [actual, expected] = await Promise.all([
+			query(sql),
+			query(`
+				select country.* from store, address, city, country
+				where address.address_id=store.address_id
+					and city.city_id=address.city_id
+					and country.country_id=city.country_id
+			`)
+		]);
+		assert.deepEqual(actual, expected);
+	});
+	it('store map this map address', async function () {
+		var q = ql.parse("store map this map address");
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		assert(require('ql/Type.equals')(t, [type.address]));
+		var sql = generate(sql);
+		var [actual, expected] = await Promise.all([
+			query(sql),
+			query(`
+				select address.* from store, address
+				where address.address_id=store.address_id
+			`)
+		]);
+		assert.deepEqual(actual, expected);
+	});
+})
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);

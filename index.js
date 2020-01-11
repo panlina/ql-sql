@@ -1,5 +1,7 @@
 var { Scope, Expression } = require('ql');
 var Context = require('ql/Context');
+var QL = Symbol('ql');
+var TYPE = Symbol('type');
 function qlsql(ql) {
 	var global = this;
 	var i = 0;
@@ -7,8 +9,18 @@ function qlsql(ql) {
 	for (var name in this.scope.local)
 		this.scope.alias.local[name] = name;
 	var [sql, type] = qlsql.call(this, ql);
+	decorrelate(sql);
 	sql = require('sql').reduce(sql);
 	return [selectize(sql), type];
+	function decorrelate(sql) {
+		for (var s of require('sql').traverse(sql))
+			if (
+				s[QL] && s[QL].type == 'map' &&
+				typeof s[QL][TYPE][0] == 'object' &&
+				!(s[QL][TYPE][0] instanceof Array)
+			)
+				require('sql').decorrelate(s);
+	}
 	function qlsql(ql) {
 		var sql;
 		switch (ql.type) {
@@ -214,6 +226,26 @@ function qlsql(ql) {
 					where: $filter
 				}, type];
 				break;
+			case 'map':
+				var alias = `_${i++}`;
+				var [$expression, type] = qlsql.call(this, ql.expression);
+				var [$mapper, typeMapper] = qlsql.call(
+					this.push(
+						Object.assign(
+							new Scope({}, type[0]),
+							{ alias: { from: alias } }
+						)
+					),
+					ql.mapper
+				);
+				sql = [{
+					type: 'select',
+					field: [$mapper],
+					from: [Object.assign($expression, {
+						alias: alias
+					})]
+				}, [typeMapper]];
+				break;
 			case 'comma':
 				var aliasHead = `_${i++}`;
 				var [$value, type] = qlsql.call(this, ql.head.value);
@@ -243,6 +275,8 @@ function qlsql(ql) {
 				sql = [ql.sql];
 				break;
 		}
+		sql[0][QL] = ql;
+		ql[TYPE] = sql[1];
 		return sql;
 	}
 	function truthy(sql, type) {
