@@ -147,14 +147,16 @@ function qlsql(ql) {
 							alias: aliasValue
 						})]
 					}, type];
-				} else
+				} else {
+					var alias = `_${i++}`;
 					sql = [{
 						type: 'select',
-						field: [{ type: 'name', identifier: ql.property }],
+						field: [{ type: 'name', qualifier: alias, identifier: ql.property }],
 						from: [Object.assign($expression, {
-							alias: `_${i++}`
+							alias: alias
 						})]
 					}, type[ql.property].type];
+				}
 				break;
 			case 'index':
 				var [$expression, type] = qlsql.call(this, ql.expression);
