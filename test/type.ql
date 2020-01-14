@@ -28,14 +28,26 @@ actor {
 	films = ::film where (::film_actor where film_id=this film.film_id & actor_id=this actor.actor_id);
 	id actor_id;
 }
+category {
+	category_id: number;
+	name: string;
+	films = ::film where (::film_category where film_id=this film.film_id & category_id=this category.category_id);
+	id category_id;
+}
 film {
 	film_id: number;
 	title: string;
+	length: number;
 	actors = ::actor where (::film_actor where actor_id=this actor.actor_id & film_id=this film.film_id);
+	categories = ::category where (::film_category where category_id=this category.category_id & film_id=this film.film_id);
 	id film_id;
 }
 film_actor {
 	actor_id: number;
+	film_id: number;
+}
+film_category {
+	category_id: number;
 	film_id: number;
 }
 inventory {

@@ -163,6 +163,24 @@ it("How many Academy Dinosaur's are available from store 1?", async function () 
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('category map (avg (films map length))', async function () {
+	var q = ql.parse("category map (avg (films map length))");
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, ['number']));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`
+			select avg(length) from film, film_category, category
+			where film.film_id=film_category.film_id and category.category_id=film_category.category_id
+			group by category.category_id
+		`)
+	]);
+	assert.deepEqual(
+		actual.map(a => Object.values(a)[0]).sort(),
+		expected.map(a => Object.values(a)[0]).sort()
+	);
+});
 function query(sql) {
 	return new Promise((resolve, reject) => {
 		connection.query(sql, function (error, results) {

@@ -178,7 +178,22 @@ function qlsql(ql) {
 				break;
 			case 'call':
 				var [$expression, type] = qlsql.call(this, ql.expression);
-				sql = [$expression(qlsql.bind(this))(ql.argument), type.result];
+				if (
+					type.argument instanceof Array &&
+					typeof type.argument[0] == 'string'
+				) {
+					[$argument] = qlsql.call(this, ql.argument);
+					sql = [{
+						type: 'select',
+						field: [{
+							type: 'call',
+							callee: { type: 'name', identifier: runtime.constant[$expression] },
+							argument: [{ type: 'name', identifier: '*' }]
+						}],
+						from: [Object.assign($argument, { alias: `_${i++}` })]
+					}, type.result];
+				} else
+					sql = [$expression(qlsql.bind(this))(ql.argument), type.result];
 				break;
 			case 'operation':
 				if (ql.left)
@@ -300,13 +315,21 @@ function qlsql(ql) {
 var constant = {
 	false: 'boolean',
 	true: 'boolean',
-	length: new (require('ql/Type').Function)('string', 'number')
+	length: new (require('ql/Type').Function)('string', 'number'),
+	sum: new (require('ql/Type').Function)(['number'], 'number'),
+	avg: new (require('ql/Type').Function)(['number'], 'number'),
+	min: new (require('ql/Type').Function)(['number'], 'number'),
+	max: new (require('ql/Type').Function)(['number'], 'number')
 };
 var runtime = {
 	constant: {
 		false: { type: 'name', identifier: 'false', kind: 'scalar' },
 		true: { type: 'name', identifier: 'true', kind: 'scalar' },
-		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, argument: [qlsql(argument)[0]] })
+		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, argument: [qlsql(argument)[0]] }),
+		sum: 'sum',
+		avg: 'avg',
+		min: 'min',
+		max: 'max'
 	}
 };
 var operator = {
