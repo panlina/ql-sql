@@ -53,6 +53,17 @@ it('length "abc"', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('{a:0,b:"a"}', async function () {
+	var q = ql.parse('{a:0,b:"a"}');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, { a: { type: 'number' }, b: { type: 'string' } }));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select 0 as a, "a" as b')
+	]);
+	assert.deepEqual(actual, expected);
+});
 it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
@@ -163,22 +174,22 @@ it("How many Academy Dinosaur's are available from store 1?", async function () 
 	]);
 	assert.deepEqual(actual, expected);
 });
-it('category map (avg (films map length))', async function () {
-	var q = ql.parse("category map (avg (films map length))");
+it('category map {category:name,length:(avg (films map length))}', async function () {
+	var q = ql.parse("category map {category:name,length:(avg (films map length))}");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
-	assert(require('ql/Type.equals')(t, ['number']));
+	assert(require('ql/Type.equals')(t, [{ category: { type: 'string' }, length: { type: 'number' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
 		query(`
-			select avg(length) from film, film_category, category
+			select category.name as category, avg(length) as length from film, film_category, category
 			where film.film_id=film_category.film_id and category.category_id=film_category.category_id
 			group by category.category_id
 		`)
 	]);
 	assert.deepEqual(
-		actual.map(a => Object.values(a)[0]).sort(),
-		expected.map(a => Object.values(a)[0]).sort()
+		actual.sort((a, b) => a.category - b.category),
+		expected.sort((a, b) => a.category - b.category)
 	);
 });
 function query(sql) {

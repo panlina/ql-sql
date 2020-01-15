@@ -83,6 +83,30 @@ function qlsql(ql) {
 				var [, , , depth] = this.find(value => value == type, { key: 'local', name: 'this' });
 				sql = qlsql.call(this, new Expression.Name('this', depth));
 				break;
+			case 'object':
+				var $property = ql.property.map(
+					property => ({
+						name: property.name,
+						value: qlsql.call(this, property.value)
+					})
+				);
+				sql = [{
+					type: 'select',
+					field: $property.map(
+						property => Object.assign(
+							property.value[0],
+							{ as: property.name }
+						)
+					),
+					from: []
+				}, $property.reduce(
+					(o, p) => Object.assign(
+						o,
+						{ [p.name]: { type: p.value[1] } }
+					),
+					{}
+				)];
+				break;
 			case 'property':
 				var thisResolution = resolveThis.call(this, ql.expression);
 				if (thisResolution) {
