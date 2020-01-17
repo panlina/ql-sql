@@ -109,6 +109,16 @@ function qlsql(ql) {
 					{}
 				)];
 				break;
+			case 'array':
+				var $element = ql.element.map(
+					element => qlsql.call(this, element)
+				);
+				sql = [$element.reduce((left, right) => ({
+					type: 'union',
+					left: tabulize(left[0]),
+					right: tabulize(right[0])
+				})), [$element[0][1]]];
+				break;
 			case 'property':
 				var thisResolution = resolveThis.call(this, ql.expression);
 				if (thisResolution) {

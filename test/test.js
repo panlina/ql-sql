@@ -64,6 +64,28 @@ it('{a:0,b:"a"}', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('[0,1]', async function () {
+	var q = ql.parse('[0,1]');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, ['number']));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select 0 union select 1')
+	]);
+	assert.deepEqual(actual, expected);
+});
+it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
+	var q = ql.parse('[{a:0,b:"a"},{a:1,b:"b"}]');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, [{ a: { type: 'number' }, b: { type: 'string' } }]));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select 0 as a, "a" as b union select 1 as a, "b" as b')
+	]);
+	assert.deepEqual(actual, expected);
+});
 it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
