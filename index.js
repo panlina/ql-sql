@@ -1,5 +1,7 @@
 var { Scope, Expression } = require('ql');
 var Context = require('ql/Context');
+var selectize = require('sql').selectize;
+var tabulize = require('sql').tabulize;
 var QL = Symbol('ql');
 var TYPE = Symbol('type');
 function qlsql(ql) {
@@ -360,33 +362,5 @@ var operator = {
 	'&': '&&',
 	'|': '||'
 };
-
-function tabulize(sql) {
-	if (sql.type != 'select')
-		if (sql.type != 'name' || sql.kind == 'scalar')
-			sql = {
-				type: 'select',
-				field: [sql],
-				from: []
-			};
-	return sql;
-}
-
-function selectize(sql) {
-	if (sql.type != 'select')
-		if (sql.type == 'name' && sql.kind != 'scalar')
-			sql = {
-				type: 'select',
-				field: [{ type: 'name', identifier: '*' }],
-				from: [sql]
-			};
-		else
-			sql = {
-				type: 'select',
-				field: [sql],
-				from: []
-			};
-	return sql;
-}
 
 module.exports = qlsql;
