@@ -299,6 +299,21 @@ function qlsql(ql) {
 					})]
 				}, [typeMapper]];
 				break;
+			case 'limit':
+				var alias = `_${i++}`;
+				var [$expression, type] = qlsql.call(this, ql.expression);
+				var [$start] = qlsql.call(this, ql.limiter.element[0]);
+				var [$length] = qlsql.call(this, ql.limiter.element[1]);
+				sql = [{
+					type: 'select',
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+					from: [Object.assign($expression, {
+						alias: alias
+					})],
+					limit: $length,
+					offset: $start
+				}, type];
+				break;
 			case 'comma':
 				var aliasHead = `_${i++}`;
 				var [$value, type] = qlsql.call(this, ql.head.value);

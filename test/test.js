@@ -181,6 +181,30 @@ describe('map', function () {
 		assert.deepEqual(actual, expected);
 	});
 })
+describe('limit', function () {
+	it("film limit [1,10]", async function () {
+		var q = ql.parse('film limit [1,10]');
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		assert(require('ql/Type.equals')(t, [type.film]));
+		var sql = generate(sql);
+		var [actual, expected] = await Promise.all([
+			query(sql),
+			query(`select * from film limit 1, 10`)
+		]);
+		assert.deepEqual(actual, expected);
+	});
+	it("film limit [1,10] limit [1,9]", async function () {
+		var q = ql.parse('film limit [1,10] limit [1,9]');
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		assert(require('ql/Type.equals')(t, [type.film]));
+		var sql = generate(sql);
+		var [actual, expected] = await Promise.all([
+			query(sql),
+			query(`select * from film limit 2, 9`)
+		]);
+		assert.deepEqual(actual, expected);
+	});
+});
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
