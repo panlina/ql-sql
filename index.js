@@ -314,6 +314,27 @@ function qlsql(ql) {
 					offset: $start
 				}, type];
 				break;
+			case 'order':
+				var alias = `_${i++}`;
+				var [$expression, type] = qlsql.call(this, ql.expression);
+				var [$orderer] = qlsql.call(
+					this.push(
+						Object.assign(
+							new Scope({}, type[0]),
+							{ alias: { from: alias } }
+						)
+					),
+					ql.orderer
+				);
+				sql = [{
+					type: 'select',
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+					from: [Object.assign($expression, {
+						alias: alias
+					})],
+					order: $orderer
+				}, type];
+				break;
 			case 'comma':
 				var aliasHead = `_${i++}`;
 				var [$value, type] = qlsql.call(this, ql.head.value);
