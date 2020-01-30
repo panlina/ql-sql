@@ -257,6 +257,17 @@ function qlsql(ql) {
 					require('ql/Type.operate')(ql.operator, typeLeft, typeRight)
 				];
 				break;
+			case 'conditional':
+				var [$condition, typeCondition] = qlsql.call(this, ql.condition);
+				var [$true, type] = qlsql.call(this, ql.true);
+				var [$false] = qlsql.call(this, ql.false);
+				$condition = truthy($condition, typeCondition);
+				sql = [{
+					type: 'call',
+					callee: { type: 'name', identifier: 'if' },
+					argument: [$condition, $true, $false]
+				}, type];
+				break;
 			case 'filter':
 				var alias = `_${i++}`;
 				var [$expression, type] = qlsql.call(this, ql.expression);

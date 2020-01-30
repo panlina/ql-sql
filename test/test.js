@@ -97,6 +97,17 @@ it('0 in [0,1]', async function () {
 	]);
 	assert.equal(Object.values(actual[0])[0], Object.values(expected[0])[0]);
 });
+it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async function () {
+	var q = ql.parse('film limit [0,10] map {film:title,length:length>=100?"long":"short"}');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, [{ film: { type: 'string' }, length: { type: 'string' } }]));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select title as film, if(length>=100,"long","short") as length from film limit 0, 10')
+	]);
+	assert.deepEqual(actual, expected);
+});
 it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
