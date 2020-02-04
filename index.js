@@ -115,6 +115,7 @@ function qlsql(ql) {
 				);
 				sql = [$element.reduce((left, right) => ({
 					type: 'union',
+					all: true,
 					left: tabulize(left[0]),
 					right: tabulize(right[0])
 				})), [$element[0][1]]];

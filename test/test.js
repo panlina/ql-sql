@@ -82,7 +82,7 @@ it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query('select 0 as a, "a" as b union select 1 as a, "b" as b')
+		query('select 0 as a, "a" as b union all select 1 as a, "b" as b')
 	]);
 	assert.deepEqual(actual, expected);
 });
