@@ -256,6 +256,21 @@ describe('order', function () {
 		assert.deepEqual(actual, expected);
 	});
 });
+it("distinct (customer map {country:address.city.country.country}) order country", async function () {
+	var q = ql.parse('distinct (customer map {country:address.city.country.country}) order country');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, [{ country: { type: 'string' } }]));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`
+			select distinct country.country from customer, address, city, country
+			where customer.address_id=address.address_id and address.city_id=city.city_id and city.country_id=country.country_id
+			order by country;
+		`)
+	]);
+	assert.deepEqual(actual, expected);
+});
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);

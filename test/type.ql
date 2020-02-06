@@ -58,3 +58,14 @@ inventory {
 	store = ::store#(this inventory.store_id);
 	id inventory_id;
 }
+customer {
+	customer_id: number;
+	store_id: number;
+	first_name: string;
+	last_name: string;
+	address_id: number;
+	active: boolean;
+	store = ::store#(this customer.store_id);
+	address = ::address#(this customer.address_id);
+	id customer_id;
+}

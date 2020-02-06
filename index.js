@@ -347,6 +347,18 @@ function qlsql(ql) {
 					order: $orderer
 				}, type];
 				break;
+			case 'distinct':
+				var alias = `_${i++}`;
+				var [$expression, type] = qlsql.call(this, ql.expression);
+				sql = [{
+					type: 'select',
+					distinct: true,
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+					from: [Object.assign($expression, {
+						alias: alias
+					})]
+				}, type];
+				break;
 			case 'comma':
 				var aliasHead = `_${i++}`;
 				var [$value, type] = qlsql.call(this, ql.head.value);
