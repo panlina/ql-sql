@@ -344,7 +344,8 @@ function qlsql(ql) {
 					from: [Object.assign($expression, {
 						alias: alias
 					})],
-					order: $orderer
+					order: $orderer,
+					direction: ql.direction
 				}, type];
 				break;
 			case 'distinct':
