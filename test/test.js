@@ -53,6 +53,17 @@ it('length "abc"', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('substr {"abc",1}', async function () {
+	var q = ql.parse('substr {"abc",1}');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, 'string'));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query("select substr('abc',2)")
+	]);
+	assert.equal(Object.values(actual[0])[0], Object.values(expected[0])[0]);
+});
 it('{a:0,b:"a"}', async function () {
 	var q = ql.parse('{a:0,b:"a"}');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
