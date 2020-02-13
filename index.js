@@ -120,6 +120,16 @@ function qlsql(ql) {
 					right: tabulize(right[0])
 				})), [$element[0][1]]];
 				break;
+			case 'tuple':
+				var $element = ql.element.map(
+					element => qlsql.call(this, element)
+				);
+				sql = [{
+					type: 'select',
+					field: $element.map(e => e[0]),
+					from: []
+				}, new (require('ql/Type').Tuple)($element.map(e => e[1]))];
+				break;
 			case 'property':
 				var thisResolution = resolveThis.call(this, ql.expression);
 				if (thisResolution) {

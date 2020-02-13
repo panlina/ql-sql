@@ -86,6 +86,17 @@ it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('{0,"a"}', async function () {
+	var q = ql.parse('{0,"a"}');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	assert(require('ql/Type.equals')(t, new (require('ql/Type').Tuple)(['number', 'string'])));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select 0, "a"')
+	]);
+	assert.deepEqual(actual, expected);
+});
 it('0 in [0,1]', async function () {
 	var q = ql.parse('0 in [0,1]');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
