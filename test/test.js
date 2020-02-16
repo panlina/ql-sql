@@ -7,7 +7,6 @@ var mysql = require('mysql');
 var qlsql = require('..');
 var type = ql.parse(fs.readFileSync(path.join(__dirname, 'type.ql'), 'utf8'), 'Declarations');
 var type = require('ql/Type.compile')(type);
-var local = require('lodash.mapvalues')(type, value => [value]);
 var connection;
 before(function () {
 	connection = mysql.createConnection({
@@ -22,7 +21,7 @@ after(function () {
 });
 it('store', async function () {
 	var q = ql.parse("store");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [type.store]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -33,7 +32,7 @@ it('store', async function () {
 });
 it('false', async function () {
 	var q = ql.parse('false');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'boolean'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -44,7 +43,7 @@ it('false', async function () {
 });
 it('length "abc"', async function () {
 	var q = ql.parse('length "abc"');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'number'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -55,7 +54,7 @@ it('length "abc"', async function () {
 });
 it('substr {"abc",1}', async function () {
 	var q = ql.parse('substr {"abc",1}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -66,7 +65,7 @@ it('substr {"abc",1}', async function () {
 });
 it('{a:0,b:"a"}', async function () {
 	var q = ql.parse('{a:0,b:"a"}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, { a: { type: 'number' }, b: { type: 'string' } }));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -77,7 +76,7 @@ it('{a:0,b:"a"}', async function () {
 });
 it('[0,1]', async function () {
 	var q = ql.parse('[0,1]');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, ['number']));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -88,7 +87,7 @@ it('[0,1]', async function () {
 });
 it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
 	var q = ql.parse('[{a:0,b:"a"},{a:1,b:"b"}]');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [{ a: { type: 'number' }, b: { type: 'string' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -99,7 +98,7 @@ it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
 });
 it('{0,"a"}', async function () {
 	var q = ql.parse('{0,"a"}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, new (require('ql/Type').Tuple)(['number', 'string'])));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -110,7 +109,7 @@ it('{0,"a"}', async function () {
 });
 it('0 in [0,1]', async function () {
 	var q = ql.parse('0 in [0,1]');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'boolean'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -121,7 +120,7 @@ it('0 in [0,1]', async function () {
 });
 it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async function () {
 	var q = ql.parse('film limit [0,10] map {film:title,length:length>=100?"long":"short"}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [{ film: { type: 'string' }, length: { type: 'string' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -132,7 +131,7 @@ it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async
 });
 it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -151,7 +150,7 @@ it('store#1.address.city.country.country', async function () {
 });
 it('actor#1.films', async function () {
 	var q = ql.parse("actor#1.films");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [type.film]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -168,7 +167,7 @@ it('actor#1.films', async function () {
 describe('map', function () {
 	it('store map address', async function () {
 		var q = ql.parse("store map address");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.address]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -182,7 +181,7 @@ describe('map', function () {
 	});
 	it('store map address.city', async function () {
 		var q = ql.parse("store map address.city");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.city]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -196,7 +195,7 @@ describe('map', function () {
 	});
 	it('store map address.city.country', async function () {
 		var q = ql.parse("store map address.city.country");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.country]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -212,7 +211,7 @@ describe('map', function () {
 	});
 	it('store map this map address', async function () {
 		var q = ql.parse("store map this map address");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.address]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -228,7 +227,7 @@ describe('map', function () {
 describe('limit', function () {
 	it("film limit [1,10]", async function () {
 		var q = ql.parse('film limit [1,10]');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.film]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -239,7 +238,7 @@ describe('limit', function () {
 	});
 	it("film limit [1,10] limit [1,9]", async function () {
 		var q = ql.parse('film limit [1,10] limit [1,9]');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.film]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -252,7 +251,7 @@ describe('limit', function () {
 describe('order', function () {
 	it("actor order first_name limit [0,10]", async function () {
 		var q = ql.parse('actor order first_name limit [0,10]');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.actor]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -263,7 +262,7 @@ describe('order', function () {
 	});
 	it("actor limit [0,10] order first_name", async function () {
 		var q = ql.parse('actor limit [0,10] order first_name');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.actor]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
@@ -280,7 +279,7 @@ describe('order', function () {
 });
 it("distinct (customer map {country:address.city.country.country}) order country", async function () {
 	var q = ql.parse('distinct (customer map {country:address.city.country.country}) order country');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [{ country: { type: 'string' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -295,7 +294,7 @@ it("distinct (customer map {country:address.city.country.country}) order country
 });
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, 'number'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
@@ -310,7 +309,7 @@ it("How many Academy Dinosaur's are available from store 1?", async function () 
 });
 it('category map {category:name,length:(avg (films map length))} order category', async function () {
 	var q = ql.parse("category map {category:name,length:(avg (films map length))} order category");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
 	assert(require('ql/Type.equals')(t, [{ category: { type: 'string' }, length: { type: 'number' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([

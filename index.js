@@ -6,6 +6,9 @@ var QL = Symbol('ql');
 var TYPE = Symbol('type');
 function qlsql(ql) {
 	var global = this;
+	var table = require('lodash.transform')(global.scope.type, (result, value, key) => {
+		result[global.scope.table ? global.scope.table(key) : key] = [value];
+	});
 	var i = 0;
 	this.scope.alias = { local: {} };
 	for (var name in this.scope.local)
@@ -34,12 +37,18 @@ function qlsql(ql) {
 				break;
 			case 'name':
 				var resolution = Context.resolve.call(this, global, ql);
-				if (!resolution)
+				if (!resolution) {
+					if (ql.identifier in table) {
+						var $identifier = ql.identifier;
+						sql = [{ type: 'name', identifier: ql.identifier }, table[ql.identifier]];
+						break;
+					}
 					if (ql.identifier in constant) {
 						var $identifier = ql.identifier;
 						sql = [runtime.constant[$identifier], constant[ql.identifier]];
 						break;
 					}
+				}
 				var [value, [depth, key]] = resolution;
 				var scope = Context.ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
@@ -413,10 +422,10 @@ function qlsql(ql) {
 		return sql;
 	}
 	function tablename(type) {
-		var local = global.scope.local;
-		for (var name in local)
-			if (local[name][0] == type)
-				return name;
+		var _type = global.scope.type;
+		for (var name in _type)
+			if (_type[name] == type)
+				return global.scope.table ? global.scope.table(name) : name;
 	}
 }
 var constant = {
