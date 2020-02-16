@@ -1,19 +1,19 @@
 store {
 	store_id: number;
 	address_id: number;
-	address = ::address#(this store.address_id);
+	address = address#(this store.address_id);
 	id store_id;
 }
 address {
 	address_id: number;
 	city_id: number;
-	city = ::city#(this address.city_id);
+	city = city#(this address.city_id);
 	id address_id;
 }
 city {
 	city_id: number;
 	country_id: number;
-	country = ::country#(this city.country_id);
+	country = country#(this city.country_id);
 	id city_id;
 }
 country {
@@ -54,8 +54,8 @@ inventory {
 	inventory_id: number;
 	film_id: number;
 	store_id: number;
-	film = ::film#(this inventory.film_id);
-	store = ::store#(this inventory.store_id);
+	film = film#(this inventory.film_id);
+	store = store#(this inventory.store_id);
 	id inventory_id;
 }
 customer {
@@ -65,7 +65,7 @@ customer {
 	last_name: string;
 	address_id: number;
 	active: boolean;
-	store = ::store#(this customer.store_id);
-	address = ::address#(this customer.address_id);
+	store = store#(this customer.store_id);
+	address = address#(this customer.address_id);
 	id customer_id;
 }

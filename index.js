@@ -63,8 +63,8 @@ function qlsql(ql) {
 					sql = ql.identifier == 'this' && !scope.local.this && alias.from ?
 						qlsql.call(
 							global,
-							new Expression.Index(
-								new Expression.Name(tablename(value), Infinity),
+							new Expression.Id(
+								tablename(value),
 								Object.assign(
 									new Expression('sql'),
 									{
@@ -138,6 +138,23 @@ function qlsql(ql) {
 					field: $element.map(e => e[0]),
 					from: []
 				}, new (require('ql/Type').Tuple)($element.map(e => e[1]))];
+				break;
+			case 'id':
+				var type = global.scope.type[ql.identifier];
+				var [$id] = qlsql.call(this, ql.id);
+				var $table = global.scope.table ? global.scope.table(ql.identifier) : ql.identifier;
+				var alias = `_${i++}`;
+				sql = [{
+					type: 'select',
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+					from: [{ type: 'name', identifier: $table, kind: 'table', alias: alias }],
+					where: {
+						type: 'operation',
+						operator: '=',
+						left: { type: 'name', qualifier: alias, identifier: require('ql/Type.id')(type) },
+						right: $id
+					}
+				}, type];
 				break;
 			case 'property':
 				var thisResolution = resolveThis.call(this, ql.expression);
@@ -213,24 +230,6 @@ function qlsql(ql) {
 						})]
 					}, type[ql.property].type];
 				}
-				break;
-			case 'index':
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$index] = qlsql.call(this, ql.index);
-				var alias = `_${i++}`;
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [Object.assign($expression, {
-						alias: alias
-					})],
-					where: {
-						type: 'operation',
-						operator: '=',
-						left: { type: 'name', qualifier: alias, identifier: require('ql/Type.id')(type[0]) },
-						right: $index
-					}
-				}, type[0]];
 				break;
 			case 'call':
 				var [$expression, type] = qlsql.call(this, ql.expression);
