@@ -167,7 +167,7 @@ it('actor#1.films', async function () {
 });
 describe('map', function () {
 	it('store map address', async function () {
-		var q = ql.parse("store map this map address");
+		var q = ql.parse("store map address");
 		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope(local), { type: type })), q);
 		assert(require('ql/Type.equals')(t, [type.address]));
 		var sql = generate(sql);
