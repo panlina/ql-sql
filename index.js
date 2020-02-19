@@ -231,6 +231,20 @@ function qlsql(ql) {
 					}, type[ql.property].type];
 				}
 				break;
+			case 'element':
+				var alias = `_${i++}`;
+				var [$expression, type] = qlsql.call(this, ql.expression);
+				var [$index] = qlsql.call(this, ql.index);
+				sql = [{
+					type: 'select',
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+					from: [Object.assign($expression, {
+						alias: alias
+					})],
+					limit: { type: 'literal', value: 1 },
+					offset: $index
+				}, type[0]];
+				break;
 			case 'call':
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				if (
