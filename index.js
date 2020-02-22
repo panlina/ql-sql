@@ -135,7 +135,7 @@ function qlsql(ql) {
 				);
 				sql = [{
 					type: 'select',
-					field: $element.map(e => e[0]),
+					field: $element.map((e, i) => Object.assign(e[0], { as: i })),
 					from: []
 				}, new (require('ql/Type').Tuple)($element.map(e => e[1]))];
 				break;

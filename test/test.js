@@ -103,7 +103,7 @@ it('{0,"a"}', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query('select 0, "a"')
+		query('select 0 as `0`, "a" as `1`')
 	]);
 	assert.deepEqual(actual, expected);
 });
