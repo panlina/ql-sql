@@ -235,15 +235,23 @@ function qlsql(ql) {
 				var alias = `_${i++}`;
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				var [$index] = qlsql.call(this, ql.index);
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [Object.assign($expression, {
-						alias: alias
-					})],
-					limit: { type: 'literal', value: 1 },
-					offset: $index
-				}, type[0]];
+				sql = type instanceof Array ?
+					[{
+						type: 'select',
+						field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+						from: [Object.assign($expression, {
+							alias: alias
+						})],
+						limit: { type: 'literal', value: 1 },
+						offset: $index
+					}, type[0]] :
+					[{
+						type: 'select',
+						field: [{ type: 'name', qualifier: alias, identifier: ql.index.value }],
+						from: [Object.assign($expression, {
+							alias: alias
+						})]
+					}, type.element[ql.index.value]];
 				break;
 			case 'call':
 				var [$expression, type] = qlsql.call(this, ql.expression);
