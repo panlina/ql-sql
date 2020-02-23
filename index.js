@@ -289,12 +289,17 @@ function qlsql(ql) {
 							from: [Object.assign($left, {
 								alias: `_${i++}`
 							})]
+						} :
+						ql.operator == '+' && typeLeft == 'string' && typeRight == 'string' ? {
+							type: 'call',
+							callee: { type: 'name', identifier: 'concat' },
+							argument: [$left, $right]
 						} : {
-							type: 'operation',
-							operator: operator[ql.operator] || ql.operator,
-							left: $left,
-							right: $right
-						},
+								type: 'operation',
+								operator: operator[ql.operator] || ql.operator,
+								left: $left,
+								right: $right
+							},
 					require('ql/Type.operate')(ql.operator, typeLeft, typeRight)
 				];
 				break;

@@ -25,6 +25,7 @@ actor {
 	actor_id: number;
 	first_name: string;
 	last_name: string;
+	full_name = first_name + " " + last_name;
 	films = ::film where (::film_actor where film_id=this film.film_id & actor_id=this actor.actor_id);
 	id actor_id;
 }

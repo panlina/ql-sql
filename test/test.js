@@ -335,15 +335,15 @@ it('category map {category:name,length:(avg (films map length))} order category'
 	assert.deepEqual(actual, expected);
 });
 it("Which actor has appeared in the most films?", async function () {
-	var q = ql.parse('(actor map {actor:actor_id,films:films#} order films desc)@0.actor');
+	var q = ql.parse('(actor map {actor:full_name,films:films#} order films desc)@0.actor');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'number'));
+	assert(require('ql/Type.equals')(t, 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
 		query(`
 			select actor from (
-				select actor_id as actor, (
+				select concat(first_name, " ", last_name) as actor, (
 					select count(*) from film
 					where exists(
 						select * from film_actor
