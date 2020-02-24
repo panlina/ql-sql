@@ -303,6 +303,17 @@ it("distinct (customer map {country:address.city.country.country}) order country
 	]);
 	assert.deepEqual(actual, expected);
 });
+it("How many distinct actors last names are there?", async function () {
+	var q = ql.parse('(distinct (actor map last_name))#');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
+	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`select count(distinct last_name) from actor`)
+	]);
+	assert.deepEqual(Object.values(actual[0])[0], Object.values(expected[0])[0]);
+});
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
