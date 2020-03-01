@@ -37,7 +37,7 @@ it('false', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query("select false")
+		query("select false as ``")
 	]);
 	assert.deepEqual(actual, expected);
 });
@@ -48,7 +48,7 @@ it('length "abc"', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query('select length("abc")')
+		query('select length("abc") as ``')
 	]);
 	assert.deepEqual(actual, expected);
 });
@@ -59,9 +59,9 @@ it('substr {"abc",1}', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query("select substr('abc',2)")
+		query("select substr('abc',2) as ``")
 	]);
-	assert.equal(Object.values(actual[0])[0], Object.values(expected[0])[0]);
+	assert.deepEqual(actual, expected);
 });
 it('{a:0,b:"a"}', async function () {
 	var q = ql.parse('{a:0,b:"a"}');
@@ -81,7 +81,7 @@ it('[0,1]', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query('select 0 union select 1')
+		query('select 0 as `` union select 1 as ``')
 	]);
 	assert.deepEqual(actual, expected);
 });
@@ -114,9 +114,9 @@ it('{0,"a"}@1', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query('select "a"')
+		query('select "a" as ``')
 	]);
-	assert.deepEqual(Object.values(actual[0])[0], Object.values(expected[0])[0]);
+	assert.deepEqual(actual, expected);
 });
 it('0 in [0,1]', async function () {
 	var q = ql.parse('0 in [0,1]');
@@ -125,9 +125,31 @@ it('0 in [0,1]', async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query("select 0 in (0,1)")
+		query("select 0 in (0,1) as ``")
 	]);
-	assert.equal(Object.values(actual[0])[0], Object.values(expected[0])[0]);
+	assert.deepEqual(actual, expected);
+});
+it('film map film_id', async function () {
+	var q = ql.parse('film map film_id');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
+	assert(require('ql/Type.equals')(t, ['number']));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select film_id as `` from film')
+	]);
+	assert.deepEqual(actual, expected);
+});
+it('(film map film_id)@0', async function () {
+	var q = ql.parse('(film map film_id)@0');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
+	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query('select film_id as `` from film limit 1')
+	]);
+	assert.deepEqual(actual, expected);
 });
 it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async function () {
 	var q = ql.parse('film limit [0,10] map {film:title,length:length>=100?"long":"short"}');
@@ -148,7 +170,7 @@ it('store#1.address.city.country.country', async function () {
 	var [actual, expected] = await Promise.all([
 		query(sql),
 		query(`
-			select country from country where country_id=(
+			select country as \`\` from country where country_id=(
 				select country_id from city where city_id=(
 					select city_id from address where address_id=(
 						select address_id from store where store_id=1
@@ -310,9 +332,9 @@ it("How many distinct actors last names are there?", async function () {
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
-		query(`select count(distinct last_name) from actor`)
+		query(`select count(distinct last_name) as \`\` from actor`)
 	]);
-	assert.deepEqual(Object.values(actual[0])[0], Object.values(expected[0])[0]);
+	assert.deepEqual(actual, expected);
 });
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
@@ -322,7 +344,7 @@ it("How many Academy Dinosaur's are available from store 1?", async function () 
 	var [actual, expected] = await Promise.all([
 		query(sql),
 		query(`
-			select count(*) from inventory
+			select count(*) as \`\` from inventory
 			join film on inventory.film_id=film.film_id
 			where store_id=1 and film.title='ACADEMY DINOSAUR'
 		`)
@@ -353,7 +375,7 @@ it("Which actor has appeared in the most films?", async function () {
 	var [actual, expected] = await Promise.all([
 		query(sql),
 		query(`
-			select actor from (
+			select actor as \`\` from (
 				select concat(first_name, " ", last_name) as actor, (
 					select count(*) from film
 					where exists(

@@ -227,7 +227,8 @@ function qlsql(ql) {
 						field: [{ type: 'name', qualifier: alias, identifier: ql.property }],
 						from: [Object.assign($expression, {
 							alias: alias
-						})]
+						})],
+						kind: 'scalar'
 					}, type[ql.property].type];
 				}
 				break;
@@ -250,7 +251,8 @@ function qlsql(ql) {
 						field: [{ type: 'name', qualifier: alias, identifier: ql.index.value }],
 						from: [Object.assign($expression, {
 							alias: alias
-						})]
+						})],
+						kind: 'scalar'
 					}, type.element[ql.index.value]];
 				break;
 			case 'call':
@@ -267,7 +269,8 @@ function qlsql(ql) {
 							callee: { type: 'name', identifier: runtime.constant[$expression] },
 							argument: [{ type: 'name', identifier: '*' }]
 						}],
-						from: [Object.assign($argument, { alias: `_${i++}` })]
+						from: [Object.assign($argument, { alias: `_${i++}` })],
+						kind: 'scalar'
 					}, type.result];
 				} else
 					sql = [$expression(qlsql.bind(this))(ql.argument), type.result];
@@ -288,7 +291,8 @@ function qlsql(ql) {
 							}],
 							from: [Object.assign($left, {
 								alias: `_${i++}`
-							})]
+							})],
+							kind: 'scalar'
 						} :
 						ql.operator == '+' && typeLeft == 'string' && typeRight == 'string' ? {
 							type: 'call',
@@ -353,7 +357,8 @@ function qlsql(ql) {
 					field: [$mapper],
 					from: [Object.assign($expression, {
 						alias: alias
-					})]
+					})],
+					kind: typeof typeMapper == 'string' ? '[scalar]' : undefined
 				}, [typeMapper]];
 				break;
 			case 'limit':
