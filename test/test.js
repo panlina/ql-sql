@@ -310,6 +310,17 @@ describe('order', function () {
 		assert.deepEqual(actual, expected);
 	});
 });
+it("i=1,actor where actor_id=i", async function () {
+	var q = ql.parse('i=1,actor where actor_id=i');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
+	assert(require('ql/Type.equals')(t, [type.actor]));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`select * from actor where actor_id=1;`)
+	]);
+	assert.deepEqual(actual, expected);
+});
 it("distinct (customer map {country:address.city.country.country}) order country", async function () {
 	var q = ql.parse('distinct (customer map {country:address.city.country.country}) order country');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);

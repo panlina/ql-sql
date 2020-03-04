@@ -61,30 +61,43 @@ function qlsql(ql) {
 					);
 				else {
 					sql = ql.identifier == 'this' && !scope.local.this && alias.from ?
-						qlsql.call(
-							global,
-							new Expression.Id(
-								tablename(value),
-								Object.assign(
-									new Expression('sql'),
-									{
-										sql: {
-											type: 'name',
-											qualifier: alias.from,
-											identifier: require('ql/Type.id')(value)
+						typeof value != 'string' ?
+							qlsql.call(
+								global,
+								new Expression.Id(
+									tablename(value),
+									Object.assign(
+										new Expression('sql'),
+										{
+											sql: {
+												type: 'name',
+												qualifier: alias.from,
+												identifier: require('ql/Type.id')(value)
+											}
 										}
-									}
+									)
 								)
-							)
-						) :
+							) :
+							[{ type: 'name', qualifier: alias.from, identifier: '', kind: 'scalar' }, value] :
 						[
-							{
-								type: 'name',
-								identifier: ql.identifier == 'this' && !scope.local.this ?
+							(alias =>
+								typeof scope.local[ql.identifier] != 'string' ?
+									{
+										type: 'name',
+										identifier: alias,
+										kind: 'table'
+									} :
+									{
+										type: 'select',
+										field: [{ type: 'name', qualifier: alias, identifier: '' }],
+										from: [{ type: 'name', identifier: alias }],
+										kind: 'scalar'
+									}
+							)(
+								ql.identifier == 'this' && !scope.local.this ?
 									alias.this :
-									alias.local[ql.identifier],
-								kind: 'table'
-							},
+									alias.local[ql.identifier]
+							),
 							value
 						];
 				}
