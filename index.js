@@ -1,7 +1,7 @@
 var { Scope, Expression } = require('ql');
 var Context = require('ql/Context');
-var selectize = require('sql').selectize;
-var tabulize = require('sql').tabulize;
+var selectize = require('./selectize');
+var tabulize = require('./tabulize');
 var QL = Symbol('ql');
 var TYPE = Symbol('type');
 function qlsql(ql) {
@@ -16,7 +16,7 @@ function qlsql(ql) {
 	var [sql, type] = qlsql.call(this, ql);
 	decorrelate(sql);
 	sql = require('sql').reduce(sql);
-	return [selectize(sql), type];
+	return [selectize(sql, type), type];
 	function decorrelate(sql) {
 		for (var s of require('sql').traverse(sql))
 			if (
@@ -138,8 +138,8 @@ function qlsql(ql) {
 				sql = [$element.reduce((left, right) => ({
 					type: 'union',
 					all: true,
-					left: tabulize(left[0]),
-					right: tabulize(right[0])
+					left: tabulize(left[0], left[1]),
+					right: tabulize(right[0], right[1])
 				})), [$element[0][1]]];
 				break;
 			case 'tuple':
@@ -212,7 +212,7 @@ function qlsql(ql) {
 				var [$expression, type] = qlsql.call(this, ql.expression);
 				if (type[ql.property].value) {
 					var aliasThis = `_${i++}`;
-					var [$value, type] = qlsql.call(
+					var [$value, typeValue] = qlsql.call(
 						global.push(
 							Object.assign(
 								new Scope({}, type),
@@ -226,22 +226,21 @@ function qlsql(ql) {
 						type: 'select',
 						with: {
 							name: aliasThis,
-							value: selectize($expression)
+							value: selectize($expression, type)
 						},
 						field: [{ type: 'name', qualifier: aliasValue, identifier: '*' }],
-						from: [Object.assign(tabulize($value), {
+						from: [Object.assign(tabulize($value, typeValue), {
 							alias: aliasValue
 						})]
-					}, type];
+					}, typeValue];
 				} else {
 					var alias = `_${i++}`;
 					sql = [{
 						type: 'select',
-						field: [{ type: 'name', qualifier: alias, identifier: ql.property }],
+						field: [{ type: 'name', qualifier: alias, identifier: ql.property, as: '' }],
 						from: [Object.assign($expression, {
 							alias: alias
-						})],
-						kind: 'scalar'
+						})]
 					}, type[ql.property].type];
 				}
 				break;
@@ -261,11 +260,10 @@ function qlsql(ql) {
 					}, type[0]] :
 					[{
 						type: 'select',
-						field: [{ type: 'name', qualifier: alias, identifier: ql.index.value }],
+						field: [{ type: 'name', qualifier: alias, identifier: ql.index.value, as: '' }],
 						from: [Object.assign($expression, {
 							alias: alias
-						})],
-						kind: 'scalar'
+						})]
 					}, type.element[ql.index.value]];
 				break;
 			case 'call':
@@ -280,10 +278,10 @@ function qlsql(ql) {
 						field: [{
 							type: 'call',
 							callee: { type: 'name', identifier: runtime.constant[$expression] },
-							argument: [{ type: 'name', identifier: '*' }]
+							argument: [{ type: 'name', identifier: '*' }],
+							as: ''
 						}],
-						from: [Object.assign($argument, { alias: `_${i++}` })],
-						kind: 'scalar'
+						from: [Object.assign($argument, { alias: `_${i++}` })]
 					}, type.result];
 				} else
 					sql = [$expression(qlsql.bind(this))(ql.argument), type.result];
@@ -300,12 +298,12 @@ function qlsql(ql) {
 							field: [{
 								type: 'call',
 								callee: { type: 'name', identifier: 'count' },
-								argument: [{ type: 'name', identifier: '*' }]
+								argument: [{ type: 'name', identifier: '*' }],
+								as: ''
 							}],
 							from: [Object.assign($left, {
 								alias: `_${i++}`
-							})],
-							kind: 'scalar'
+							})]
 						} :
 						ql.operator == '+' && typeLeft == 'string' && typeRight == 'string' ? {
 							type: 'call',
@@ -367,11 +365,10 @@ function qlsql(ql) {
 				);
 				sql = [{
 					type: 'select',
-					field: [$mapper],
+					field: [typeof typeMapper == 'string' ? Object.assign($mapper, { as: '' }) : $mapper],
 					from: [Object.assign($expression, {
 						alias: alias
-					})],
-					kind: typeof typeMapper == 'string' ? '[scalar]' : undefined
+					})]
 				}, [typeMapper]];
 				break;
 			case 'limit':
@@ -425,11 +422,11 @@ function qlsql(ql) {
 				break;
 			case 'comma':
 				var aliasHead = `_${i++}`;
-				var [$value, type] = qlsql.call(this, ql.head.value);
+				var [$value, typeValue] = qlsql.call(this, ql.head.value);
 				var [$body, type] = qlsql.call(
 					this.push(
 						Object.assign(
-							new Scope({ [ql.head.name]: type }),
+							new Scope({ [ql.head.name]: typeValue }),
 							{ alias: { local: { [ql.head.name]: aliasHead } } }
 						)
 					),
@@ -440,10 +437,10 @@ function qlsql(ql) {
 					type: 'select',
 					with: {
 						name: aliasHead,
-						value: selectize($value)
+						value: selectize($value, typeValue)
 					},
 					field: [{ type: 'name', qualifier: aliasBody, identifier: '*' }],
-					from: [Object.assign(tabulize($body), {
+					from: [Object.assign(tabulize($body, type), {
 						alias: aliasBody
 					})]
 				}, type];
