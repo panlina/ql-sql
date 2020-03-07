@@ -463,6 +463,13 @@ function qlsql(ql) {
 				operator: 'exists',
 				right: sql
 			};
+		else if (type == 'string')
+			sql = {
+				type: 'operation',
+				operator: '!=',
+				left: sql,
+				right: { type: 'literal', value: '' }
+			};
 		return sql;
 	}
 	function tablename(type) {
