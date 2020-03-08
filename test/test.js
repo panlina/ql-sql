@@ -347,6 +347,17 @@ it("How many distinct actors last names are there?", async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it("Which last names are not repeated?", async function () {
+	var q = ql.parse('distinct (actor map last_name) where (_last_name=this,actor where last_name=_last_name)#=1');
+	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
+	assert(require('ql/Type.equals')(t, ['string']));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`select last_name \`\` from actor group by last_name having count(*)=1`)
+	]);
+	assert.deepEqual(actual, expected);
+});
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
 	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
