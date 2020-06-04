@@ -10,9 +10,6 @@ function qlsql(ql) {
 		result[global.scope.table ? global.scope.table(key) : key] = [value];
 	});
 	var i = 0;
-	this.scope.alias = { local: {} };
-	for (var name in this.scope.local)
-		this.scope.alias.local[name] = name;
 	var [sql, type] = qlsql.call(this, ql);
 	decorrelate(sql);
 	sql = require('sql').reduce(sql);
