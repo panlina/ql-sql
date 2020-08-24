@@ -269,7 +269,7 @@ function qlsql(ql) {
 					type.argument instanceof Array &&
 					typeof type.argument[0] == 'string'
 				) {
-					[$argument] = qlsql.call(this, ql.argument);
+					var [$argument] = qlsql.call(this, ql.argument);
 					sql = [{
 						type: 'select',
 						field: [{
