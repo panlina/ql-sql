@@ -49,6 +49,7 @@ function qlsql(ql) {
 				var [value, [depth, key]] = resolution;
 				var scope = Context.ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
+				// If it's a property, complete it into a property expression and translate it.
 				if (key == 'this')
 					sql = qlsql.call(this,
 						new Expression.Property(
@@ -57,7 +58,10 @@ function qlsql(ql) {
 						)
 					);
 				else {
+					// It's a local.
+					// If it's a this, and it's a row,
 					sql = ql.identifier == 'this' && !scope.local.this && alias.from ?
+						// If it's not a primitive, reselect it from the original table, since sql does not support "all columns in current row" as a value;
 						typeof value != 'string' ?
 							qlsql.call(
 								global,
@@ -75,7 +79,9 @@ function qlsql(ql) {
 									)
 								)
 							) :
+							// else it's a primitive, directly member-access it;
 							[{ type: 'name', qualifier: alias.from, identifier: '', kind: 'scalar' }, value] :
+					// else either it's a local, or it's a table, it can be referenced by an alias.
 						[
 							(alias =>
 								typeof scope.local[ql.identifier] != 'string' ?
@@ -167,6 +173,7 @@ function qlsql(ql) {
 				}, type];
 				break;
 			case 'property':
+				// If it's a property expression of this expression, execute a quick path.
 				var thisResolution = resolveThis.call(this, ql.expression);
 				if (thisResolution) {
 					var [scope] = thisResolution;
