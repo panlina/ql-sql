@@ -60,7 +60,7 @@ function qlsql(ql) {
 				else {
 					// It's a local.
 					// If it's a this, and it's a row,
-					sql = ql.identifier == 'this' && !scope.local.this && alias.from ?
+					sql = ql.identifier == 'this' && !scope.local.this && alias.thisrow ?
 						// If it's not a primitive, reselect it from the original table, since sql does not support "all columns in current row" as a value;
 						typeof value != 'string' ?
 							qlsql.call(
@@ -72,7 +72,7 @@ function qlsql(ql) {
 										{
 											sql: {
 												type: 'name',
-												qualifier: alias.from,
+												qualifier: alias.thisrow,
 												identifier: require('ql/Type.id')(value)
 											}
 										}
@@ -80,7 +80,7 @@ function qlsql(ql) {
 								)
 							) :
 							// else it's a primitive, directly member-access it;
-							[{ type: 'name', qualifier: alias.from, identifier: '', kind: 'scalar' }, value] :
+							[{ type: 'name', qualifier: alias.thisrow, identifier: '', kind: 'scalar' }, value] :
 					// else either it's a local, or it's a table, it can be referenced by an alias.
 						[
 							(alias =>
@@ -182,17 +182,17 @@ function qlsql(ql) {
 							global.push(
 								Object.assign(
 									new Scope({}, scope.this),
-									{ alias: { this: scope.alias.this, from: scope.alias.from } }
+									{ alias: { this: scope.alias.this, thisrow: scope.alias.thisrow } }
 								)
 							),
 							scope.this[ql.property].value
 						);
 						break;
 					} else
-						if (scope.alias.from) {
+						if (scope.alias.thisrow) {
 							sql = [{
 								type: 'name',
-								qualifier: scope.alias.from,
+								qualifier: scope.alias.thisrow,
 								identifier: ql.property,
 								kind: 'scalar'
 							}, scope.this[ql.property].type];
@@ -340,7 +340,7 @@ function qlsql(ql) {
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
-							{ alias: { from: alias } }
+							{ alias: { thisrow: alias } }
 						)
 					),
 					ql.filter
@@ -362,7 +362,7 @@ function qlsql(ql) {
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
-							{ alias: { from: alias } }
+							{ alias: { thisrow: alias } }
 						)
 					),
 					ql.mapper
@@ -397,7 +397,7 @@ function qlsql(ql) {
 					this.push(
 						Object.assign(
 							new Scope({}, type[0]),
-							{ alias: { from: alias } }
+							{ alias: { thisrow: alias } }
 						)
 					),
 					ql.orderer
