@@ -1,505 +1,399 @@
+var TYPE = require('ql').TYPE;
+var QL = require('ql').QL;
+var ALIAS = Symbol('alias');
 var { Scope, Expression } = require('ql');
 var Context = require('ql/Context');
 var selectize = require('./selectize');
 var tabulize = require('./tabulize');
-var QL = Symbol('ql');
-var TYPE = Symbol('type');
-function qlsql(ql) {
-	var global = this;
-	var table = require('lodash.transform')(global.scope.type, (result, value, key) => {
-		result[global.scope.table ? global.scope.table(key) : key] = [value];
-	});
-	var i = 0;
-	var [sql, type] = qlsql.call(this, ql);
-	decorrelate(sql);
-	sql = require('sql').reduce(sql);
-	return [selectize(sql, type), type];
-	function decorrelate(sql) {
-		for (var s of require('sql').traverse(sql))
-			if (
-				s[QL] && s[QL].type == 'map' &&
-				typeof s[QL][TYPE][0] == 'object' &&
-				!(s[QL][TYPE][0] instanceof Array)
-			)
-				require('sql').decorrelate(s);
-	}
-	function qlsql(ql) {
-		var sql;
-		switch (ql.type) {
-			case 'literal':
-				sql = [{
-					type: 'literal',
-					value: ql.value
-				}, typeof ql.value];
-				break;
-			case 'name':
-				var resolution = Context.resolve.call(this, global, ql);
-				if (!resolution) {
-					if (ql.identifier in table) {
-						var $identifier = ql.identifier;
-						sql = [{ type: 'name', identifier: ql.identifier }, table[ql.identifier]];
-						break;
-					}
-					if (ql.identifier in constant) {
-						var $identifier = ql.identifier;
-						sql = [runtime.constant[$identifier], constant[ql.identifier]];
-						break;
-					}
-				}
+var i;
+var compile;
+var global;
+var interpretation = {
+	pre(_global, _compile) {
+		global = _global;
+		compile = _compile;
+		i = 0;
+		global.scope.alias = { local: {} };
+		for (var name in global.scope.local)
+			global.scope.alias.local[name] = name;
+	},
+	post(sql) {
+		decorrelate(sql);
+		sql = require('sql').reduce(sql);
+		return selectize(sql, sql[TYPE]);
+		function decorrelate(sql) {
+			for (var s of require('sql').traverse(sql))
+				if (
+					s[QL] && s[QL].type == 'map' &&
+					typeof s[TYPE][0] == 'object' &&
+					!(s[TYPE][0] instanceof Array)
+				)
+					require('sql').decorrelate(s);
+		}
+	},
+	expression: {
+		literal($value) {
+			return {
+				type: 'literal',
+				value: $value
+			};
+		},
+		name: {
+			table($identifier) {
+				return { type: 'name', identifier: $identifier };
+			},
+			constant($identifier) {
+				return runtime.constant[$identifier];
+			},
+			name($identifier, resolution) {
 				var [value, [depth, key]] = resolution;
 				var scope = Context.ancestor.call(this, global, depth).scope;
 				var alias = scope.alias;
-				// If it's a property, complete it into a property expression and translate it.
-				if (key == 'this')
-					sql = qlsql.call(this,
-						new Expression.Property(
-							new Expression.Name('this', depth),
-							ql.identifier
-						)
-					);
-				else {
-					// It's a local.
-					// If it's a this, and it's a row,
-					sql = ql.identifier == 'this' && !scope.local.this && alias.thisrow ?
-						// If it's not a primitive, reselect it from the original table, since sql does not support "all columns in current row" as a value;
-						typeof value != 'string' ?
-							qlsql.call(
-								global,
-								new Expression.Id(
-									tablename(value),
-									Object.assign(
-										new Expression('sql'),
-										{
-											sql: {
-												type: 'name',
-												qualifier: alias.thisrow,
-												identifier: require('ql/Type.id')(value)
-											}
-										}
-									)
-								)
-							) :
-							// else it's a primitive, directly member-access it;
-							[{ type: 'name', qualifier: alias.thisrow, identifier: '', kind: 'scalar' }, value] :
-					// else either it's a local, or it's a table, it can be referenced by an alias.
-						[
-							(alias =>
-								typeof scope.local[ql.identifier] != 'string' ?
-									{
-										type: 'name',
-										identifier: alias,
-										kind: 'table'
-									} :
-									{
-										type: 'select',
-										field: [{ type: 'name', qualifier: alias, identifier: '' }],
-										from: [{ type: 'name', identifier: alias }],
-										kind: 'scalar'
-									}
-							)(
-								ql.identifier == 'this' && !scope.local.this ?
-									alias.this :
-									alias.local[ql.identifier]
-							),
-							value
-						];
-				}
-				break;
-			case 'this':
-				var type = global.scope.type[ql.identifier];
-				var [, , , depth] = this.find(value => value == type, { key: 'local', name: 'this' });
-				sql = qlsql.call(this, new Expression.Name('this', depth));
-				break;
-			case 'object':
-				var $property = ql.property.map(
-					property => ({
-						name: property.name,
-						value: qlsql.call(this, property.value)
-					})
-				);
-				sql = [{
-					type: 'select',
-					field: $property.map(
-						property => Object.assign(
-							property.value[0],
-							{ as: property.name }
-						)
-					),
-					from: []
-				}, $property.reduce(
-					(o, p) => Object.assign(
-						o,
-						{ [p.name]: { type: p.value[1] } }
-					),
-					{}
-				)];
-				break;
-			case 'array':
-				var $element = ql.element.map(
-					element => qlsql.call(this, element)
-				);
-				sql = [$element.reduce((left, right) => ({
-					type: 'union',
-					all: true,
-					left: tabulize(left[0], left[1]),
-					right: tabulize(right[0], right[1])
-				})), [$element[0][1]]];
-				break;
-			case 'tuple':
-				var $element = ql.element.map(
-					element => qlsql.call(this, element)
-				);
-				sql = [{
-					type: 'select',
-					field: $element.map((e, i) => Object.assign(e[0], { as: i })),
-					from: []
-				}, new (require('ql/Type').Tuple)($element.map(e => e[1]))];
-				break;
-			case 'id':
-				var type = global.scope.type[ql.identifier];
-				var [$id] = qlsql.call(this, ql.id);
-				var $table = global.scope.table ? global.scope.table(ql.identifier) : ql.identifier;
-				var alias = `_${i++}`;
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [{ type: 'name', identifier: $table, kind: 'table', alias: alias }],
-					where: {
-						type: 'operation',
-						operator: '=',
-						left: { type: 'name', qualifier: alias, identifier: require('ql/Type.id')(type) },
-						right: $id
-					}
-				}, type];
-				break;
-			case 'property':
-				// If it's a property expression of this expression, execute a quick path.
-				var thisResolution = resolveThis.call(this, ql.expression);
-				if (thisResolution) {
-					var [scope] = thisResolution;
-					if (scope.this[ql.property].value) {
-						sql = qlsql.call(
-							global.push(
+				// If it's a this, and it's a row,
+				return $identifier == 'this' && !scope.local.this && alias.thisrow ?
+					// If it's not a primitive, reselect it from the original table, since sql does not support "all columns in current row" as a value;
+					typeof value != 'string' ?
+						compile.call(
+							global,
+							new Expression.Id(
+								tablename(value),
 								Object.assign(
-									new Scope({}, scope.this),
-									{ alias: { this: scope.alias.this, thisrow: scope.alias.thisrow } }
+									new Expression('sql'),
+									{
+										sql: {
+											type: 'name',
+											qualifier: alias.thisrow,
+											identifier: require('ql/Type.id')(value)
+										}
+									}
 								)
-							),
-							scope.this[ql.property].value
-						);
-						break;
-					} else
-						if (scope.alias.thisrow) {
-							sql = [{
-								type: 'name',
-								qualifier: scope.alias.thisrow,
-								identifier: ql.property,
-								kind: 'scalar'
-							}, scope.this[ql.property].type];
-							break;
-						}
-				}
-				function resolveThis(expression) {
-					if (expression.type == 'name' && expression.identifier == 'this') {
-						var [value, [depth, key]] = Context.resolve.call(this, global, expression);
-						var scope = Context.ancestor.call(this, global, depth).scope;
-						if (!scope.local.this)
-							return [scope, depth];
-					}
-					if (expression.type == 'this') {
-						var type = global.scope.type[expression.identifier];
-						var [, , , depth] = this.find(value => value == type, { key: 'local', name: 'this' });
-						var scope = Context.ancestor.call(this, global, depth).scope;
-						return [scope, depth];
-					}
-				}
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				if (type[ql.property].value) {
-					var aliasThis = `_${i++}`;
-					var [$value, typeValue] = qlsql.call(
-						global.push(
-							Object.assign(
-								new Scope({}, type),
-								{ alias: { this: aliasThis } }
 							)
-						),
-						type[ql.property].value
+						) :
+						// else it's a primitive, directly member-access it;
+						{ type: 'name', qualifier: alias.thisrow, identifier: '', kind: 'scalar' } :
+				// else either it's a local, or it's a table, it can be referenced by an alias.
+					(alias =>
+						typeof scope.local[$identifier] != 'string' ?
+							{
+								type: 'name',
+								identifier: alias,
+								kind: 'table'
+							} :
+							{
+								type: 'select',
+								field: [{ type: 'name', qualifier: alias, identifier: '' }],
+								from: [{ type: 'name', identifier: alias }],
+								kind: 'scalar'
+							}
+					)(
+						$identifier == 'this' && !scope.local.this ?
+							alias.this :
+							alias.local[$identifier]
 					);
-					var aliasValue = `_${i++}`;
-					sql = [{
-						type: 'select',
-						with: {
-							name: aliasThis,
-							value: selectize($expression, type)
-						},
-						field: [{ type: 'name', qualifier: aliasValue, identifier: '*' }],
-						from: [Object.assign(tabulize($value, typeValue), {
-							alias: aliasValue
-						})]
-					}, typeValue];
-				} else {
-					var alias = `_${i++}`;
-					sql = [{
-						type: 'select',
-						field: [{ type: 'name', qualifier: alias, identifier: ql.property, as: '' }],
-						from: [Object.assign($expression, {
-							alias: alias
-						})]
-					}, type[ql.property].type];
+			}
+		},
+		object($property) {
+			return {
+				type: 'select',
+				field: $property.map(
+					property => Object.assign(
+						property.value,
+						{ as: property.name }
+					)
+				),
+				from: []
+			};
+		},
+		array($element) {
+			return $element.reduce((left, right) => ({
+				type: 'union',
+				all: true,
+				left: tabulize(left, left[TYPE]),
+				right: tabulize(right, right[TYPE])
+			}));
+		},
+		tuple($element) {
+			return {
+				type: 'select',
+				field: $element.map((e, i) => Object.assign(e, { as: i })),
+				from: []
+			};
+		},
+		find($table, $property, $id) {
+			var alias = `_${i++}`;
+			return {
+				type: 'select',
+				field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+				from: [{ type: 'name', identifier: $table, kind: 'table', alias: alias }],
+				where: {
+					type: 'operation',
+					operator: '=',
+					left: { type: 'name', qualifier: alias, identifier: $property },
+					right: $id
 				}
-				break;
-			case 'element':
-				var alias = `_${i++}`;
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$index] = qlsql.call(this, ql.index);
-				sql = type instanceof Array ?
-					[{
-						type: 'select',
-						field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-						from: [Object.assign($expression, {
-							alias: alias
-						})],
-						limit: { type: 'literal', value: 1 },
-						offset: $index
-					}, type[0]] :
-					[{
-						type: 'select',
-						field: [{ type: 'name', qualifier: alias, identifier: ql.index.value, as: '' }],
-						from: [Object.assign($expression, {
-							alias: alias
-						})]
-					}, type.element[ql.index.value]];
-				break;
-			case 'call':
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				if (
-					type.argument instanceof Array &&
-					typeof type.argument[0] == 'string'
-				) {
-					var [$argument] = qlsql.call(this, ql.argument);
-					sql = [{
-						type: 'select',
-						field: [{
-							type: 'call',
-							callee: { type: 'name', identifier: runtime.constant[$expression] },
-							argument: [{ type: 'name', identifier: '*' }],
-							as: ''
-						}],
-						from: [Object.assign($argument, { alias: `_${i++}` })]
-					}, type.result];
-				} else
-					sql = [$expression(qlsql.bind(this))(ql.argument), type.result];
-				break;
-			case 'operation':
-				if (ql.left)
-					var [$left, typeLeft] = qlsql.call(this, ql.left);
-				if (ql.right)
-					var [$right, typeRight] = qlsql.call(this, ql.right);
-				sql = [
-					ql.operator == '#' ?
-						{
-							type: 'select',
-							field: [{
-								type: 'call',
-								callee: { type: 'name', identifier: 'count' },
-								argument: [{ type: 'name', identifier: '*' }],
-								as: ''
-							}],
-							from: [Object.assign($left, {
-								alias: `_${i++}`
-							})]
-						} :
-						ql.operator == '+' && typeLeft == 'string' && typeRight == 'string' ? {
-							type: 'call',
-							callee: { type: 'name', identifier: 'concat' },
-							argument: [$left, $right]
-						} : {
-								type: 'operation',
-								operator: operator[ql.operator] || ql.operator,
-								left: $left,
-								right: $right
-							},
-					require('ql/Type.operate')(ql.operator, typeLeft, typeRight)
-				];
-				break;
-			case 'conditional':
-				var [$condition, typeCondition] = qlsql.call(this, ql.condition);
-				var [$true, type] = qlsql.call(this, ql.true);
-				var [$false] = qlsql.call(this, ql.false);
-				$condition = truthy($condition, typeCondition);
-				sql = [{
+			};
+		},
+		field($expression, $property) {
+			var alias = `_${i++}`;
+			return {
+				type: 'select',
+				field: [{ type: 'name', qualifier: alias, identifier: $property, as: '' }],
+				from: [Object.assign($expression, {
+					alias: alias
+				})]
+			};
+		},
+		element($expression, $index) {
+			var alias = `_${i++}`;
+			return $expression[TYPE] instanceof Array ?
+				{
+					type: 'select',
+					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+					from: [Object.assign($expression, {
+						alias: alias
+					})],
+					limit: { type: 'literal', value: 1 },
+					offset: $index
+				} :
+				{
+					type: 'select',
+					field: [{ type: 'name', qualifier: alias, identifier: $index.value, as: '' }],
+					from: [Object.assign($expression, {
+						alias: alias
+					})]
+				};
+		},
+		call($expression, $argument) {
+			if (
+				$expression[TYPE].argument instanceof Array &&
+				typeof $expression[TYPE].argument[0] == 'string'
+			)
+				return {
+					type: 'select',
+					field: [{
+						type: 'call',
+						callee: { type: 'name', identifier: runtime.constant[$expression] },
+						argument: [{ type: 'name', identifier: '*' }],
+						as: ''
+					}],
+					from: [Object.assign($argument, { alias: `_${i++}` })]
+				};
+			else
+				return $expression(compile.bind(this))($argument[QL]);
+		},
+		operation($operator, $left, $right) {
+			return $operator == '#' ?
+				{
+					type: 'select',
+					field: [{
+						type: 'call',
+						callee: { type: 'name', identifier: 'count' },
+						argument: [{ type: 'name', identifier: '*' }],
+						as: ''
+					}],
+					from: [Object.assign($left, {
+						alias: `_${i++}`
+					})]
+				} :
+				$operator == '+' && $left[TYPE] == 'string' && $right[TYPE] == 'string' ? {
 					type: 'call',
-					callee: { type: 'name', identifier: 'if' },
-					argument: [$condition, $true, $false]
-				}, type];
-				break;
-			case 'filter':
-				var alias = `_${i++}`;
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$filter, typeFilter] = qlsql.call(
-					this.push(
-						Object.assign(
-							new Scope({}, type[0]),
-							{ alias: { thisrow: alias } }
-						)
-					),
-					ql.filter
-				);
-				$filter = truthy($filter, typeFilter);
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [Object.assign($expression, {
-						alias: alias
-					})],
-					where: $filter
-				}, type];
-				break;
-			case 'map':
-				var alias = `_${i++}`;
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$mapper, typeMapper] = qlsql.call(
-					this.push(
-						Object.assign(
-							new Scope({}, type[0]),
-							{ alias: { thisrow: alias } }
-						)
-					),
-					ql.mapper
-				);
-				sql = [{
-					type: 'select',
-					field: [typeof typeMapper == 'string' ? Object.assign($mapper, { as: '' }) : $mapper],
-					from: [Object.assign($expression, {
-						alias: alias
-					})]
-				}, [typeMapper]];
-				break;
-			case 'limit':
-				var alias = `_${i++}`;
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$start] = qlsql.call(this, ql.limiter.element[0]);
-				var [$length] = qlsql.call(this, ql.limiter.element[1]);
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [Object.assign($expression, {
-						alias: alias
-					})],
-					limit: $length,
-					offset: $start
-				}, type];
-				break;
-			case 'order':
-				var alias = `_${i++}`;
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				var [$orderer] = qlsql.call(
-					this.push(
-						Object.assign(
-							new Scope({}, type[0]),
-							{ alias: { thisrow: alias } }
-						)
-					),
-					ql.orderer
-				);
-				sql = [{
-					type: 'select',
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [Object.assign($expression, {
-						alias: alias
-					})],
-					order: $orderer,
-					direction: ql.direction
-				}, type];
-				break;
-			case 'distinct':
-				var alias = `_${i++}`;
-				var [$expression, type] = qlsql.call(this, ql.expression);
-				sql = [{
-					type: 'select',
-					distinct: true,
-					field: [{ type: 'name', qualifier: alias, identifier: '*' }],
-					from: [Object.assign($expression, {
-						alias: alias
-					})]
-				}, type];
-				break;
-			case 'comma':
-				var aliasHead = `_${i++}`;
-				var [$value, typeValue] = qlsql.call(this, ql.head.value);
-				var [$body, type] = qlsql.call(
-					this.push(
-						Object.assign(
-							new Scope({ [ql.head.name]: typeValue }),
-							{ alias: { local: { [ql.head.name]: aliasHead } } }
-						)
-					),
-					ql.body
-				);
-				var aliasBody = `_${i++}`;
-				sql = [{
-					type: 'select',
-					with: {
-						name: aliasHead,
-						value: selectize($value, typeValue)
-					},
-					field: [{ type: 'name', qualifier: aliasBody, identifier: '*' }],
-					from: [Object.assign(tabulize($body, type), {
-						alias: aliasBody
-					})]
-				}, type];
-				break;
-			case 'sql':
-				sql = [ql.sql];
-				break;
+					callee: { type: 'name', identifier: 'concat' },
+					argument: [$left, $right]
+				} : {
+						type: 'operation',
+						operator: operator[$operator] || $operator,
+						left: $left,
+						right: $right
+					};
+		},
+		conditional($condition, $true, $false) {
+			$condition = truthy($condition, $condition[TYPE]);
+			return {
+				type: 'call',
+				callee: { type: 'name', identifier: 'if' },
+				argument: [$condition, $true, $false]
+			};
+		},
+		filter($expression, $filter) {
+			$filter = truthy($filter, $filter[TYPE]);
+			return {
+				type: 'select',
+				field: [{ type: 'name', qualifier: $expression[ALIAS], identifier: '*' }],
+				from: [Object.assign($expression, {
+					alias: $expression[ALIAS]
+				})],
+				where: $filter
+			};
+		},
+		map($expression, $mapper) {
+			return {
+				type: 'select',
+				field: [typeof $mapper[TYPE] == 'string' ? Object.assign($mapper, { as: '' }) : $mapper],
+				from: [Object.assign($expression, {
+					alias: $expression[ALIAS]
+				})]
+			};
+		},
+		limit($expression, [$start, $length]) {
+			var alias = `_${i++}`;
+			return {
+				type: 'select',
+				field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+				from: [Object.assign($expression, {
+					alias: alias
+				})],
+				limit: $length,
+				offset: $start
+			};
+		},
+		order($expression, $orderer, $direction) {
+			return {
+				type: 'select',
+				field: [{ type: 'name', qualifier: $expression[ALIAS], identifier: '*' }],
+				from: [Object.assign($expression, {
+					alias: $expression[ALIAS]
+				})],
+				order: $orderer,
+				direction: $direction
+			};
+		},
+		distinct($expression) {
+			var alias = `_${i++}`;
+			return {
+				type: 'select',
+				distinct: true,
+				field: [{ type: 'name', qualifier: alias, identifier: '*' }],
+				from: [Object.assign($expression, {
+					alias: alias
+				})]
+			};
+		},
+		bind($value, scope, environment = 0) {
+			var aliasValue = `_${i++}`;
+			var $expression = scope.this || Object.values(scope.local)[0];
+			return {
+				type: 'select',
+				with: {
+					name: $expression[ALIAS],
+					value: selectize($expression, $expression[TYPE])
+				},
+				field: [{ type: 'name', qualifier: aliasValue, identifier: '*' }],
+				from: [Object.assign(tabulize($value, $value[TYPE]), {
+					alias: aliasValue
+				})]
+			};
+		},
+		scope($expression, expression) {
+			var alias = {};
+			if ($expression.this) {
+				var a = `_${i++}`;
+				if (expression.type == 'property')
+					alias.this = a;
+				else
+					alias.thisrow = a;
+				$expression.this[ALIAS] = a;
+			} else {
+				var $name = Object.keys($expression.local)[0];
+				var $value = $expression.local[$name];
+				alias.local = { [$name]: `_${i++}` };
+				$value[ALIAS] = alias.local[$name];
+			}
+			return { alias: alias };
+		},
+		compile(expression) {
+			switch (expression.type) {
+				case 'property':
+					// If it's a property expression of this expression, execute a quick path.
+					var thisResolution = resolveThis.call(this, expression.expression);
+					if (thisResolution) {
+						var [scope] = thisResolution;
+						if (scope.this[expression.property].value) {
+							return compile.call(
+								global.push(
+									Object.assign(
+										new Scope({}, scope.this),
+										{ alias: { this: scope.alias.this, thisrow: scope.alias.thisrow } }
+									)
+								),
+								scope.this[expression.property].value
+							);
+						} else
+							if (scope.alias.thisrow) {
+								return t({
+									type: 'name',
+									qualifier: scope.alias.thisrow,
+									identifier: expression.property,
+									kind: 'scalar'
+								}, scope.this[expression.property].type);
+							}
+					}
+					function resolveThis(expression) {
+						if (expression.type == 'name' && expression.identifier == 'this') {
+							var [value, [depth, key]] = Context.resolve.call(this, global, expression);
+							var scope = Context.ancestor.call(this, global, depth).scope;
+							if (!scope.local.this)
+								return [scope, depth];
+						}
+						if (expression.type == 'this') {
+							var type = global.scope.type[expression.identifier];
+							var [, , , depth] = this.find(value => value == type, { key: 'local', name: 'this' });
+							var scope = Context.ancestor.call(this, global, depth).scope;
+							return [scope, depth];
+						}
+					}
+				case 'sql':
+					return expression.sql;
+			}
+			function t($expression, type) {
+				$expression[TYPE] = type;
+				$expression[QL] = expression;
+				return $expression;
+			}
 		}
-		sql[0][QL] = ql;
-		ql[TYPE] = sql[1];
-		return sql;
+	},
+	constant: {
+		false: 'boolean',
+		true: 'boolean',
+		length: new (require('ql/Type').Function)('string', 'number'),
+		substr: new (require('ql/Type').Function)(new (require('ql/Type').Tuple)(['string', 'number']), 'string'),
+		sum: new (require('ql/Type').Function)(['number'], 'number'),
+		avg: new (require('ql/Type').Function)(['number'], 'number'),
+		min: new (require('ql/Type').Function)(['number'], 'number'),
+		max: new (require('ql/Type').Function)(['number'], 'number')
 	}
-	function truthy(sql, type) {
-		if (typeof type == 'object')
-			sql = {
-				type: 'operation',
-				operator: 'exists',
-				right: sql
-			};
-		else if (type == 'string')
-			sql = {
-				type: 'operation',
-				operator: '!=',
-				left: sql,
-				right: { type: 'literal', value: '' }
-			};
-		return sql;
-	}
-	function tablename(type) {
-		var _type = global.scope.type;
-		for (var name in _type)
-			if (_type[name] == type)
-				return global.scope.table ? global.scope.table(name) : name;
-	}
-}
-var constant = {
-	false: 'boolean',
-	true: 'boolean',
-	length: new (require('ql/Type').Function)('string', 'number'),
-	substr: new (require('ql/Type').Function)(new (require('ql/Type').Tuple)(['string', 'number']), 'string'),
-	sum: new (require('ql/Type').Function)(['number'], 'number'),
-	avg: new (require('ql/Type').Function)(['number'], 'number'),
-	min: new (require('ql/Type').Function)(['number'], 'number'),
-	max: new (require('ql/Type').Function)(['number'], 'number')
 };
+function truthy(sql, type) {
+	if (typeof type == 'object')
+		sql = {
+			type: 'operation',
+			operator: 'exists',
+			right: sql
+		};
+	else if (type == 'string')
+		sql = {
+			type: 'operation',
+			operator: '!=',
+			left: sql,
+			right: { type: 'literal', value: '' }
+		};
+	return sql;
+}
+function tablename(type) {
+	var _type = global.scope.type;
+	for (var name in _type)
+		if (_type[name] == type)
+			return global.scope.table ? global.scope.table(name) : name;
+}
 var runtime = {
 	constant: {
 		false: { type: 'name', identifier: 'false', kind: 'scalar' },
 		true: { type: 'name', identifier: 'true', kind: 'scalar' },
-		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, argument: [qlsql(argument)[0]] }),
-		substr: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'substr' }, argument: [qlsql(argument.element[0])[0], { type: 'operation', operator: '+', left: qlsql(argument.element[1])[0], right: { type: 'literal', value: 1 } }] }),
-		sum: 'sum',
-		avg: 'avg',
-		min: 'min',
-		max: 'max'
+		length: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'length' }, argument: [qlsql(argument)] }),
+		substr: qlsql => argument => ({ type: 'call', callee: { type: 'name', identifier: 'substr' }, argument: [qlsql(argument.element[0]), { type: 'operation', operator: '+', left: qlsql(argument.element[1]), right: { type: 'literal', value: 1 } }] }),
+		sum: new String('sum'),
+		avg: new String('avg'),
+		min: new String('min'),
+		max: new String('max')
 	}
 };
 var operator = {
@@ -507,4 +401,4 @@ var operator = {
 	'|': '||'
 };
 
-module.exports = qlsql;
+module.exports = interpretation;

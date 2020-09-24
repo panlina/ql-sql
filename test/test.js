@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
 var ql = require('ql');
+var TYPE = require('ql/Symbol').TYPE;
 var generate = require('sql').generate;
 var mysql = require('mysql');
 var qlsql = require('..');
@@ -21,8 +22,8 @@ after(function () {
 });
 it('store', async function () {
 	var q = ql.parse("store");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [type.store]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [type.store]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -32,8 +33,8 @@ it('store', async function () {
 });
 it('false', async function () {
 	var q = ql.parse('false');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'boolean'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'boolean'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -43,8 +44,8 @@ it('false', async function () {
 });
 it('length "abc"', async function () {
 	var q = ql.parse('length "abc"');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'number'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -54,8 +55,8 @@ it('length "abc"', async function () {
 });
 it('substr {"abc",1}', async function () {
 	var q = ql.parse('substr {"abc",1}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'string'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -65,8 +66,8 @@ it('substr {"abc",1}', async function () {
 });
 it('{a:0,b:"a"}', async function () {
 	var q = ql.parse('{a:0,b:"a"}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, { a: { type: 'number' }, b: { type: 'string' } }));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], { a: { type: 'number' }, b: { type: 'string' } }));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -76,8 +77,8 @@ it('{a:0,b:"a"}', async function () {
 });
 it('[0,1]', async function () {
 	var q = ql.parse('[0,1]');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, ['number']));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], ['number']));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -87,8 +88,8 @@ it('[0,1]', async function () {
 });
 it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
 	var q = ql.parse('[{a:0,b:"a"},{a:1,b:"b"}]');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [{ a: { type: 'number' }, b: { type: 'string' } }]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [{ a: { type: 'number' }, b: { type: 'string' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -98,8 +99,8 @@ it('[{a:0,b:"a"},{a:1,b:"b"}]', async function () {
 });
 it('{0,"a"}', async function () {
 	var q = ql.parse('{0,"a"}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, new (require('ql/Type').Tuple)(['number', 'string'])));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], new (require('ql/Type').Tuple)(['number', 'string'])));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -109,8 +110,8 @@ it('{0,"a"}', async function () {
 });
 it('{0,"a"}@1', async function () {
 	var q = ql.parse('{0,"a"}@1');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'string'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -120,8 +121,8 @@ it('{0,"a"}@1', async function () {
 });
 it('0 in [0,1]', async function () {
 	var q = ql.parse('0 in [0,1]');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'boolean'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'boolean'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -131,8 +132,8 @@ it('0 in [0,1]', async function () {
 });
 it('film map film_id', async function () {
 	var q = ql.parse('film map film_id');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, ['number']));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], ['number']));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -142,8 +143,8 @@ it('film map film_id', async function () {
 });
 it('(film map film_id)@0', async function () {
 	var q = ql.parse('(film map film_id)@0');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'number'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -153,8 +154,8 @@ it('(film map film_id)@0', async function () {
 });
 it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async function () {
 	var q = ql.parse('film limit [0,10] map {film:title,length:length>=100?"long":"short"}');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [{ film: { type: 'string' }, length: { type: 'string' } }]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [{ film: { type: 'string' }, length: { type: 'string' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -164,8 +165,8 @@ it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async
 });
 it('store#1.address.city.country.country', async function () {
 	var q = ql.parse("store#1.address.city.country.country");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'string'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -183,8 +184,8 @@ it('store#1.address.city.country.country', async function () {
 });
 it('actor#1.films', async function () {
 	var q = ql.parse("actor#1.films");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [type.film]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [type.film]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -200,8 +201,8 @@ it('actor#1.films', async function () {
 describe('map', function () {
 	it('store map address', async function () {
 		var q = ql.parse("store map address");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.address]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.address]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -214,8 +215,8 @@ describe('map', function () {
 	});
 	it('store map address.city', async function () {
 		var q = ql.parse("store map address.city");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.city]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.city]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -228,8 +229,8 @@ describe('map', function () {
 	});
 	it('store map address.city.country', async function () {
 		var q = ql.parse("store map address.city.country");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.country]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.country]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -244,8 +245,8 @@ describe('map', function () {
 	});
 	it('store map this map address', async function () {
 		var q = ql.parse("store map this map address");
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.address]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.address]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -260,8 +261,8 @@ describe('map', function () {
 describe('limit', function () {
 	it("film limit [1,10]", async function () {
 		var q = ql.parse('film limit [1,10]');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.film]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.film]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -271,8 +272,8 @@ describe('limit', function () {
 	});
 	it("film limit [1,10] limit [1,9]", async function () {
 		var q = ql.parse('film limit [1,10] limit [1,9]');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.film]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.film]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -284,8 +285,8 @@ describe('limit', function () {
 describe('order', function () {
 	it("actor order first_name limit [0,10]", async function () {
 		var q = ql.parse('actor order first_name limit [0,10]');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.actor]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.actor]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -295,8 +296,8 @@ describe('order', function () {
 	});
 	it("actor limit [0,10] order first_name", async function () {
 		var q = ql.parse('actor limit [0,10] order first_name');
-		var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-		assert(require('ql/Type.equals')(t, [type.actor]));
+		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+		assert(require('ql/Type.equals')(sql[TYPE], [type.actor]));
 		var sql = generate(sql);
 		var [actual, expected] = await Promise.all([
 			query(sql),
@@ -312,8 +313,8 @@ describe('order', function () {
 });
 it("i=1,actor where actor_id=i", async function () {
 	var q = ql.parse('i=1,actor where actor_id=i');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [type.actor]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [type.actor]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -323,8 +324,8 @@ it("i=1,actor where actor_id=i", async function () {
 });
 it("distinct (customer map {country:address.city.country.country}) order country", async function () {
 	var q = ql.parse('distinct (customer map {country:address.city.country.country}) order country');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [{ country: { type: 'string' } }]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [{ country: { type: 'string' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -338,8 +339,8 @@ it("distinct (customer map {country:address.city.country.country}) order country
 });
 it("How many distinct actors last names are there?", async function () {
 	var q = ql.parse('(distinct (actor map last_name))#');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'number'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -349,8 +350,8 @@ it("How many distinct actors last names are there?", async function () {
 });
 it("Which last names are not repeated?", async function () {
 	var q = ql.parse('distinct (actor map last_name) where (_last_name=this,actor where last_name=_last_name)#=1');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, ['string']));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], ['string']));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -360,8 +361,8 @@ it("Which last names are not repeated?", async function () {
 });
 it("How many Academy Dinosaur's are available from store 1?", async function () {
 	var q = ql.parse('(inventory where store_id=1&film.title="ACADEMY DINOSAUR")#');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'number'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'number'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -375,8 +376,8 @@ it("How many Academy Dinosaur's are available from store 1?", async function () 
 });
 it('category map {category:name,length:(avg (films map length))} order category', async function () {
 	var q = ql.parse("category map {category:name,length:(avg (films map length))} order category");
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, [{ category: { type: 'string' }, length: { type: 'number' } }]));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], [{ category: { type: 'string' }, length: { type: 'number' } }]));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
@@ -391,8 +392,8 @@ it('category map {category:name,length:(avg (films map length))} order category'
 });
 it("Which actor has appeared in the most films?", async function () {
 	var q = ql.parse('(actor map {actor:full_name,films:films#} order films desc)@0.actor');
-	var [sql, t] = qlsql.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q);
-	assert(require('ql/Type.equals')(t, 'string'));
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], 'string'));
 	var sql = generate(sql);
 	var [actual, expected] = await Promise.all([
 		query(sql),
