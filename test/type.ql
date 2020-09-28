@@ -6,12 +6,14 @@ store {
 }
 address {
 	address_id: number;
+	address: string;
 	city_id: number;
 	city = city#(this address.city_id);
 	id address_id;
 }
 city {
 	city_id: number;
+	city: string;
 	country_id: number;
 	country = country#(this city.country_id);
 	id city_id;
