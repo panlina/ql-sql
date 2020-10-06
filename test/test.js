@@ -152,8 +152,8 @@ it('(film map film_id)@0', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
-it('film limit [0,10] map {film:title,length:length>=100?"long":"short"}', async function () {
-	var q = ql.parse('film limit [0,10] map {film:title,length:length>=100?"long":"short"}');
+it('film limit {0,10} map {film:title,length:length>=100?"long":"short"}', async function () {
+	var q = ql.parse('film limit {0,10} map {film:title,length:length>=100?"long":"short"}');
 	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
 	assert(require('ql/Type.equals')(sql[TYPE], [{ film: { type: 'string' }, length: { type: 'string' } }]));
 	var sql = generate(sql);
@@ -259,8 +259,8 @@ describe('map', function () {
 	});
 })
 describe('limit', function () {
-	it("film limit [1,10]", async function () {
-		var q = ql.parse('film limit [1,10]');
+	it("film limit {1,10}", async function () {
+		var q = ql.parse('film limit {1,10}');
 		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
 		assert(require('ql/Type.equals')(sql[TYPE], [type.film]));
 		var sql = generate(sql);
@@ -270,8 +270,8 @@ describe('limit', function () {
 		]);
 		assert.deepEqual(actual, expected);
 	});
-	it("film limit [1,10] limit [1,9]", async function () {
-		var q = ql.parse('film limit [1,10] limit [1,9]');
+	it("film limit {1,10} limit {1,9}", async function () {
+		var q = ql.parse('film limit {1,10} limit {1,9}');
 		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
 		assert(require('ql/Type.equals')(sql[TYPE], [type.film]));
 		var sql = generate(sql);
@@ -283,8 +283,8 @@ describe('limit', function () {
 	});
 });
 describe('order', function () {
-	it("actor order first_name limit [0,10]", async function () {
-		var q = ql.parse('actor order first_name limit [0,10]');
+	it("actor order first_name limit {0,10}", async function () {
+		var q = ql.parse('actor order first_name limit {0,10}');
 		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
 		assert(require('ql/Type.equals')(sql[TYPE], [type.actor]));
 		var sql = generate(sql);
@@ -294,8 +294,8 @@ describe('order', function () {
 		]);
 		assert.deepEqual(actual, expected);
 	});
-	it("actor limit [0,10] order first_name", async function () {
-		var q = ql.parse('actor limit [0,10] order first_name');
+	it("actor limit {0,10} order first_name", async function () {
+		var q = ql.parse('actor limit {0,10} order first_name');
 		var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
 		assert(require('ql/Type.equals')(sql[TYPE], [type.actor]));
 		var sql = generate(sql);
