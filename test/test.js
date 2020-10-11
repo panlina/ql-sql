@@ -198,6 +198,17 @@ it('actor#1.films', async function () {
 	]);
 	assert.deepEqual(actual, expected);
 });
+it('actor which actor_id=1', async function () {
+	var q = ql.parse("actor which actor_id=1");
+	var sql = ql.compile.call(new ql.Environment(Object.assign(new ql.Scope({}), { type: type })), q, qlsql);
+	assert(require('ql/Type.equals')(sql[TYPE], type.actor));
+	var sql = generate(sql);
+	var [actual, expected] = await Promise.all([
+		query(sql),
+		query(`select * from actor where actor_id=1`)
+	]);
+	assert.deepEqual(actual, expected);
+});
 describe('map', function () {
 	it('store map address', async function () {
 		var q = ql.parse("store map address");

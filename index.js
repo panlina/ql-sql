@@ -225,6 +225,17 @@ var interpretation = {
 				where: $filter
 			};
 		},
+		which($expression, $filter) {
+			$filter = truthy($filter, $filter[TYPE]);
+			return {
+				type: 'select',
+				field: [{ type: 'name', qualifier: $expression[ALIAS], identifier: '*' }],
+				from: [Object.assign($expression, {
+					alias: $expression[ALIAS]
+				})],
+				where: $filter
+			};
+		},
 		map($expression, $mapper) {
 			return {
 				type: 'select',
